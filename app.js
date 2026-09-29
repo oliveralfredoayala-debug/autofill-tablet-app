@@ -1,23 +1,22 @@
 // --- CONFIGURATION ---
 const CONFIG = {
     keywords: {
-        fullName: ["name", "full name", "employee", "person", "user"],
-        email: ["email", "e-mail", "mail"],
-        phone: ["phone", "mobile", "cell", "contact"],
-        role: ["role", "job", "title", "position", "permissions"],
-        branch: ["main branch", "branch", "location", "office", "site", "city", "county", "town", "territory", "area"]
+        firstName: ["first name", "firstname", "first", "primer nombre", "given name"],
+        lastName: ["last name", "lastname", "last", "apellido", "apellidos", "family name"],
+        fullName: ["full name", "fullname", "name", "nombre completo", "employee", "person", "user"],
+        email: ["email", "e-mail", "mail", "correo"],
+        phone: ["phone number", "phone", "mobile", "cell", "contact", "teléfono", "celular"],
+        role: ["role", "job", "title", "position", "permissions", "cargo", "puesto"],
+        branch: ["main branch", "branch", "location", "office", "site", "city", "county", "town", "territory", "area", "locations"]
     },
-    roles1Look: ["Sales Representative", "Installer", "Sales Manager", "Finance Manager", "Admin", "User"],
-    rolesEstimator: ["Salesrep", "Admin", "Org Admin", "User", "sales_manager", "Custom"]
+    roles1Look: ["Sales Representative", "Installer", "Sales Manager", "Finance Manager", "Admin", "User"]
 };
 
 // --- STATE ---
 let state = {
     users: [],
     currentIndex: 0,
-    adminUnit: "",
     sendWelcome: true,
-    targetSystem: "both",
     status: "wizard"
 };
 
@@ -33,20 +32,13 @@ document.addEventListener('DOMContentLoaded', () => {
     loadState();
     render();
     setupListeners();
+    setupBookmarklet();
 });
 
 function setupListeners() {
     document.querySelectorAll('.btn-global-reset').forEach(btn => {
-        btn.onclick = () => {
-            if (state.users.length === 0 || confirm("Reset app and clear batch data?")) {
-                resetEverything();
-            }
-        };
+        btn.onclick = resetEverything;
     });
-
-    document.getElementById('sys-btn-both').onclick = () => selectTargetSystem('both');
-    document.getElementById('sys-btn-1look').onclick = () => selectTargetSystem('1look');
-    document.getElementById('sys-btn-estimator').onclick = () => selectTargetSystem('estimator');
 
     document.getElementById('btn-parse').onclick = parseAndInit;
     document.getElementById('btn-back-parser').onclick = () => {
@@ -55,19 +47,6 @@ function setupListeners() {
         render();
     };
     document.getElementById('btn-apply-config').onclick = applyConfigAndStart;
-    document.getElementById('btn-skip').onclick = nextUser;
-
-    const copyTsvBtn = document.getElementById('btn-copy-all-tsv');
-    if (copyTsvBtn) copyTsvBtn.onclick = copyUserTSV;
-
-    const copySummaryBtn = document.getElementById('btn-copy-summary');
-    if (copySummaryBtn) copySummaryBtn.onclick = copyUserSummaryBlock;
-
-    document.getElementById('btn-reset').onclick = () => {
-        if (confirm("Clear batch progress and start fresh?")) {
-            resetEverything();
-        }
-    };
 
     // Drag & Drop File Handlers
     const dropZone = document.getElementById('drop-zone');
@@ -77,8 +56,7 @@ function setupListeners() {
     if (dropZone) {
         ['dragenter', 'dragover'].forEach(eventName => {
             dropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                e.stopPropagation();
+                e.preventDefault(); e.stopPropagation();
                 if (dropOverlay) dropOverlay.style.display = 'flex';
                 dropZone.style.borderColor = '#7c3aed';
                 dropZone.style.background = '#f3e8ff';
@@ -87,19 +65,17 @@ function setupListeners() {
 
         ['dragleave', 'drop'].forEach(eventName => {
             dropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                e.stopPropagation();
+                e.preventDefault(); e.stopPropagation();
                 if (dropOverlay) dropOverlay.style.display = 'none';
-                dropZone.style.borderColor = '#c4b5fd';
+                dropZone.style.borderColor = '#ddd6fe';
                 dropZone.style.background = '#faf5ff';
             }, false);
         });
 
         dropZone.addEventListener('drop', (e) => {
             const dt = e.dataTransfer;
-            const files = dt.files;
-            if (files && files.length > 0) {
-                handleFileDrop(files[0]);
+            if (dt && dt.files && dt.files.length > 0) {
+                handleFileDrop(dt.files[0]);
             }
         });
     }
@@ -145,6 +121,21 @@ async function handleFileDrop(file) {
         showToast(`❌ Error reading file: ${err.message}`, "error");
     }
 }
+
+function cleanPhone(raw) {
+    if (!raw) return "555-555-5555";
+    const str = String(raw).trim();
+    const digits = str.replace(/\D/g, '');
+    if (digits.length === 10) {
+        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    if (digits.length === 11 && digits.startsWith('1')) {
+        return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+    }
+    if (digits.length >= 7 && digits.length <= 15) {
+        return str;
+    }
+    return "555-555-5555";
 }
 
 function saveState() {
@@ -157,65 +148,32 @@ function saveState() {
 function loadState() {
     const saved = localStorage.getItem('tablet_app_state');
     if (saved) {
-        try {
-            state = JSON.parse(saved);
-        } catch (e) { }
+        try { state = JSON.parse(saved); } catch (e) { }
     }
 }
 
 function resetEverything() {
-    state = {
-        users: [],
-        currentIndex: 0,
-        adminUnit: "",
-        sendWelcome: true,
-        targetSystem: "both",
-        status: "wizard"
-    };
+    const incompleteCount = state.users.filter(u => !u.completed).length;
+    if (state.users.length > 0) {
+        let msg = "Clear batch progress and start fresh?";
+        if (incompleteCount > 0) {
+            msg = `⚠️ Warning: You have ${incompleteCount} user(s) that are NOT marked as completed!\n\nAre you sure you want to reset and clear all data?`;
+        }
+        if (!confirm(msg)) return;
+    }
+
+    state = { users: [], currentIndex: 0, sendWelcome: true, status: "wizard" };
     localStorage.removeItem('tablet_app_state');
     localStorage.removeItem('tablet_current_user');
     if (document.getElementById('wiz-data')) document.getElementById('wiz-data').value = "";
     render();
-}
-
-function selectTargetSystem(sys) {
-    state.targetSystem = sys;
-    updateTargetSystemUI();
-    saveState();
-}
-
-function updateTargetSystemUI() {
-    const sys = state.targetSystem || 'both';
-    const btnBoth = document.getElementById('sys-btn-both');
-    const btn1Look = document.getElementById('sys-btn-1look');
-    const btnEstimator = document.getElementById('sys-btn-estimator');
-
-    if (btnBoth) {
-        btnBoth.style.background = sys === 'both' ? '#7c3aed' : '#f3e8ff';
-        btnBoth.style.color = sys === 'both' ? '#ffffff' : '#6d28d9';
-    }
-    if (btn1Look) {
-        btn1Look.style.background = sys === '1look' ? '#16a34a' : '#f3e8ff';
-        btn1Look.style.color = sys === '1look' ? '#ffffff' : '#6d28d9';
-    }
-    if (btnEstimator) {
-        btnEstimator.style.background = sys === 'estimator' ? '#ea580c' : '#f3e8ff';
-        btnEstimator.style.color = sys === 'estimator' ? '#ffffff' : '#6d28d9';
-    }
-
-    const sec1Look = document.getElementById('sec-1look-options');
-    if (sec1Look) {
-        if (sys === 'estimator') sec1Look.classList.add('hidden');
-        else sec1Look.classList.remove('hidden');
-    }
+    showToast("🔄 App reset to Step 1", "info");
 }
 
 function render() {
     Object.values(screens).forEach(el => {
         if (el) el.classList.add('hidden');
     });
-
-    updateTargetSystemUI();
 
     if (state.status === 'wizard') {
         if (screens.wizard) screens.wizard.classList.remove('hidden');
@@ -251,37 +209,28 @@ function parseAndInit() {
 }
 
 function parseSmartData(raw) {
-    if (raw.includes('\t')) return parseExcelTsvData(raw);
+    if (raw.includes('\t') || raw.includes(',')) return parseExcelTsvData(raw);
     return parseTextOrEmailData(raw);
-}
-
-function cleanPhone(raw) {
-    if (!raw) return "555-555-5555";
-    const str = String(raw).trim();
-    const digits = str.replace(/\D/g, '');
-    if (digits.length === 10) {
-        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-    }
-    if (digits.length === 11 && digits.startsWith('1')) {
-        return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
-    }
-    if (digits.length >= 7 && digits.length <= 15) {
-        return str;
-    }
-    return "555-555-5555";
 }
 
 function parseExcelTsvData(raw) {
     const lines = raw.split(/\r?\n/).filter(l => l.trim());
     if (lines.length === 0) return [];
-    const firstLineCols = lines[0].split('\t').map(c => c.trim().toLowerCase());
-    const mapping = { fullName: -1, email: -1, phone: -1, role: -1, branch: -1, managerName: -1, managerEmail: -1 };
+
+    const isTab = lines[0].includes('\t');
+    const delim = isTab ? '\t' : ',';
+    const firstLineCols = lines[0].split(delim).map(c => c.trim().toLowerCase());
+    const mapping = { firstName: -1, lastName: -1, fullName: -1, email: -1, phone: -1, role: -1, branch: -1, managerName: -1, managerEmail: -1 };
     let hasHeaders = false;
 
-    for (const key in CONFIG.keywords) {
-        const idx = firstLineCols.findIndex(col => CONFIG.keywords[key].some(k => col.includes(k) || col === k));
-        if (idx !== -1) { mapping[key] = idx; hasHeaders = true; }
-    }
+    firstLineCols.forEach((col, idx) => {
+        if (CONFIG.keywords.firstName.some(w => col.includes(w) || col === w)) { mapping.firstName = idx; hasHeaders = true; }
+        else if (CONFIG.keywords.lastName.some(w => col.includes(w) || col === w)) { mapping.lastName = idx; hasHeaders = true; }
+        else if (CONFIG.keywords.fullName.some(w => col.includes(w) || col === w) && mapping.fullName === -1) { mapping.fullName = idx; hasHeaders = true; }
+        else if (CONFIG.keywords.email.some(w => col.includes(w) || col === w)) { mapping.email = idx; hasHeaders = true; }
+        else if (CONFIG.keywords.phone.some(w => col.includes(w) || col === w)) { mapping.phone = idx; hasHeaders = true; }
+        else if (CONFIG.keywords.role.some(w => col.includes(w) || col === w)) { mapping.role = idx; hasHeaders = true; }
+    });
 
     const branchIndices = [];
     firstLineCols.forEach((col, idx) => {
@@ -291,16 +240,34 @@ function parseExcelTsvData(raw) {
 
     const dataRows = hasHeaders ? lines.slice(1) : lines;
     return dataRows.map(line => {
-        const cols = line.split('\t');
-        const val = (k) => cols[mapping[k]]?.trim() || "";
-        const rawName = val('fullName').replace(/[^a-zA-Z\s\-]/g, '').trim();
-        const nameParts = rawName.split(' ').filter(p => p);
-        let firstName = nameParts[0] || "";
-        let lastName = nameParts.length > 1 ? nameParts.pop() : "";
+        const cols = line.split(delim);
+        const getVal = (idx) => (idx > -1 && cols[idx]) ? cols[idx].trim() : "";
+
+        let rawFirstName = "";
+        let rawLastName = "";
+
+        if (mapping.firstName > -1 && mapping.lastName > -1) {
+            rawFirstName = getVal(mapping.firstName);
+            rawLastName = getVal(mapping.lastName);
+        } else {
+            const nameIdx = mapping.fullName > -1 ? mapping.fullName : 0;
+            const rawName = getVal(nameIdx);
+            const nameParts = rawName.split(/\s+/).filter(p => p);
+            if (nameParts.length > 1) {
+                rawLastName = nameParts.pop();
+                rawFirstName = nameParts.join(' ');
+            } else {
+                rawFirstName = rawName;
+            }
+        }
+
+        const firstName = rawFirstName.split(/\s+/).filter(Boolean).join('.');
+        const lastName = rawLastName;
+        const email = getVal(mapping.email > -1 ? mapping.email : (isTab ? 1 : -1)) || cols.find(c => c.includes('@'))?.trim() || "";
 
         let rawPhone = "";
         if (mapping.phone > -1) {
-            const candidate = val('phone');
+            const candidate = getVal(mapping.phone);
             if (candidate.replace(/\D/g, '').length >= 7) rawPhone = candidate;
         }
         if (!rawPhone) {
@@ -313,15 +280,14 @@ function parseExcelTsvData(raw) {
 
         return {
             firstName, lastName,
-            email: val('email'),
+            email,
             phone: cleanPhone(rawPhone),
-            role: val('role'),
-            branch: branchIndices.length > 0 ? branchIndices.map(i => cols[i]?.trim()).filter(x => x).join(', ') : val('branch'),
-            managerName: mapping.managerName > -1 ? cols[mapping.managerName]?.trim() : "",
-            managerEmail: mapping.managerEmail > -1 ? cols[mapping.managerEmail]?.trim() : "",
-            originalRole: val('role')
+            role: getVal(mapping.role),
+            branch: branchIndices.length > 0 ? branchIndices.map(i => cols[i]?.trim()).filter(x => x).join(', ') : getVal(mapping.branch),
+            originalRole: getVal(mapping.role),
+            completed: false
         };
-    }).filter(u => u.firstName || u.email);
+    }).filter(u => isValidUser(u));
 }
 
 function parseTextOrEmailData(text) {
@@ -329,53 +295,87 @@ function parseTextOrEmailData(text) {
     const users = [];
 
     for (const block of blocks) {
-        const user = { firstName: "", lastName: "", email: "", phone: "", role: "", managerName: "", managerEmail: "", branch: "", originalRole: "" };
-        const lines = block.split(/\r?\n/);
+        let rawFirstName = "";
+        let rawLastName = "";
+        let email = "";
         let rawPhone = "";
+        let role = "";
+        let branch = "";
 
+        const lines = block.split(/\r?\n/);
         for (const line of lines) {
             const kvMatch = line.match(/^\s*([^:\-=]+)[:\-=]\s*(.+)$/);
             if (kvMatch) {
                 const key = kvMatch[1].trim().toLowerCase();
                 const val = kvMatch[2].trim();
-                if (key.match(/first\s*name|primer\s*nombre/)) user.firstName = val;
-                else if (key.match(/last\s*name|apellido/)) user.lastName = val;
+                if (key.match(/first\s*name|primer\s*nombre/)) rawFirstName = val;
+                else if (key.match(/last\s*name|apellido/)) rawLastName = val;
                 else if (key.match(/full\s*name|^name$|^nombre$/)) {
-                    const parts = val.split(' ').filter(p => p);
-                    user.firstName = parts[0] || val;
-                    user.lastName = parts.length > 1 ? parts.slice(1).join(' ') : "";
+                    const parts = val.split(/\s+/).filter(p => p);
+                    rawFirstName = parts[0] || val;
+                    rawLastName = parts.length > 1 ? parts.slice(1).join(' ') : "";
                 }
-                else if (key.match(/email|mail|correo/)) user.email = val;
+                else if (key.match(/email|mail|correo/)) email = val;
                 else if (key.match(/phone|mobile|cell|tel[ée]fono/)) {
                     if (val.replace(/\D/g, '').length >= 7) rawPhone = val;
                 }
-                else if (key.match(/role|position|job|title/)) { user.role = val; user.originalRole = val; }
-                else if (key.match(/branch|location|office|site/)) user.branch = val;
+                else if (key.match(/role|position|job|title/)) role = val;
+                else if (key.match(/branch|location|office|site/)) branch = val;
             } else {
                 const emailMatch = line.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-                if (emailMatch && !user.email) user.email = emailMatch[0];
+                if (emailMatch && !email) email = emailMatch[0];
                 const phoneMatch = line.match(/(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\b\d{10}\b/);
                 if (phoneMatch && !rawPhone) rawPhone = phoneMatch[0];
             }
         }
-        user.phone = cleanPhone(rawPhone);
-        if (user.firstName || user.email) users.push(user);
+
+        const firstName = rawFirstName.split(/\s+/).filter(Boolean).join('.');
+        const lastName = rawLastName;
+
+        const u = {
+            firstName, lastName,
+            email,
+            phone: cleanPhone(rawPhone),
+            role,
+            branch,
+            originalRole: role,
+            completed: false
+        };
+
+        if (isValidUser(u)) users.push(u);
     }
     return users;
 }
 
+function isValidUser(u) {
+    if (!u.firstName && !u.email) return false;
+
+    const junk = [
+        "first name", "last name", "given name", "family name", "name", "full name",
+        "permissions", "role", "email", "phone", "mobile phone", "manager", "branch",
+        "location", "locations", "sales rep", "sales representative", "sales manager",
+        "finance manager", "installer", "admin", "user", "dealer name", "licensed",
+        "platform", "active", "deactivated"
+    ];
+
+    const fullName = (u.firstName + " " + u.lastName).toLowerCase().trim();
+    if (junk.includes(fullName) || junk.includes(u.firstName.toLowerCase()) || junk.includes(u.email.toLowerCase())) {
+        return false;
+    }
+    return true;
+}
+
 function renderConfigUI() {
-    updateTargetSystemUI();
     const summaryHeader = document.getElementById('summary-header');
     if (summaryHeader) summaryHeader.innerText = `PARSED USERS (${state.users.length})`;
 
     const previewBox = document.getElementById('parsed-users-preview');
     if (previewBox) {
         previewBox.innerHTML = state.users.map((u, i) => `
-            <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:8px; padding:8px 10px; margin-bottom:6px;">
+            <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:10px; padding:8px 10px; margin-bottom:6px;">
                 <b style="color:#2e1065;">${i + 1}. ${u.firstName} ${u.lastName}</b>
-                <div style="color:#6b7280; font-size:11px;">📧 ${u.email || 'No email'} | 📱 ${u.phone || 'No phone'}</div>
-                <div style="color:#6d28d9; font-weight:600; font-size:11px;">💼 Role: ${u.role || 'Not specified'} | 🏢 Branch: ${u.branch || 'None'}</div>
+                <div style="color:#64748b; font-size:11px; margin-top:2px;">📧 ${u.email || 'No email'} | 📱 ${u.phone || 'No phone'}</div>
+                <div style="color:#6d28d9; font-weight:600; font-size:11px; margin-top:2px;">💼 Role: ${u.role || 'Not specified'} | 🏢 Location: ${u.branch || 'None'}</div>
             </div>
         `).join('');
     }
@@ -383,48 +383,44 @@ function renderConfigUI() {
     const list = document.getElementById('mapping-list');
     if (!list) return;
     list.innerHTML = "";
-    const sys = state.targetSystem || 'both';
+
     const rolesFound = [...new Set(state.users.map(u => u.role))];
     if (rolesFound.length === 0) rolesFound[0] = "";
 
     rolesFound.forEach(role => {
         const div = document.createElement('div');
         div.style.cssText = "margin-bottom:10px; padding:10px; background:#faf5ff; border:1px solid #e9d5ff; border-radius:10px;";
+
         const rLower = (role || "").toLowerCase();
         let def1Look = 'Sales Representative';
-        let defEstimator = 'Salesrep';
 
-        if (rLower.includes('install')) { def1Look = 'Installer'; defEstimator = 'User'; }
-        else if (rLower.includes('finance') || rLower === 'fm') { def1Look = 'Finance Manager'; defEstimator = 'Org Admin'; }
-        else if ((rLower.includes('sales') && rLower.includes('manager')) || rLower === 'sm') { def1Look = 'Sales Manager'; defEstimator = 'sales_manager'; }
-        else if (rLower.includes('sales') || rLower.includes('rep') || rLower === 'sr') { def1Look = 'Sales Representative'; defEstimator = 'Salesrep'; }
-        else if (rLower.includes('admin')) { def1Look = 'Admin'; defEstimator = 'Admin'; }
-        else if (rLower.includes('user')) { def1Look = 'User'; defEstimator = 'User'; }
+        if (rLower.includes('install')) { def1Look = 'Installer'; }
+        else if (rLower.includes('finance') || rLower === 'fm') { def1Look = 'Finance Manager'; }
+        else if ((rLower.includes('sales') && rLower.includes('manager')) || rLower === 'sm') { def1Look = 'Sales Manager'; }
+        else if (rLower.includes('sales') || rLower.includes('rep') || rLower === 'sr') { def1Look = 'Sales Representative'; }
+        else if (rLower.includes('admin')) { def1Look = 'Admin'; }
+        else if (rLower.includes('user')) { def1Look = 'User'; }
 
-        let roleHTML = `<div style="margin-bottom:6px; font-weight:bold; font-size:12px; color:#4c1d95;">Parsed Role: "${role || '(Default)'}"</div>`;
-        if (sys === 'both' || sys === '1look') {
-            roleHTML += `<div style="margin-bottom:6px;"><label style="color:#16a34a;">🟢 1LOOK ROLE</label><select class="map-select-1look" data-original="${role}">${CONFIG.roles1Look.map(r => `<option value="${r}" ${r === def1Look ? 'selected' : ''}>${r}</option>`).join('')}</select></div>`;
-        }
-        if (sys === 'both' || sys === 'estimator') {
-            roleHTML += `<div><label style="color:#ea580c;">🟧 ESTIMATOR ROLE</label><select class="map-select-estimator" data-original="${role}">${CONFIG.rolesEstimator.map(r => `<option value="${r}" ${r === defEstimator ? 'selected' : ''}>${r}</option>`).join('')}</select></div>`;
-        }
-        div.innerHTML = roleHTML;
+        div.innerHTML = `
+            <div style="margin-bottom:4px; font-weight:700; font-size:11px; color:#4c1d95;">Parsed Role: "${role || '(Default / Empty)'}"</div>
+            <div>
+                <label style="color:#16a34a; font-size:10px; font-weight:700;">🟢 1LOOK ROLE</label>
+                <select class="map-select-1look" data-original="${role}">
+                    ${CONFIG.roles1Look.map(r => `<option value="${r}" ${r === def1Look ? 'selected' : ''}>${r}</option>`).join('')}
+                </select>
+            </div>
+        `;
         list.appendChild(div);
     });
 }
 
 function applyConfigAndStart() {
-    state.adminUnit = document.getElementById('wiz-admin')?.value || "";
     const map1Look = {};
-    const mapEstimator = {};
-
     document.querySelectorAll('.map-select-1look').forEach(s => map1Look[s.dataset.original] = s.value);
-    document.querySelectorAll('.map-select-estimator').forEach(s => mapEstimator[s.dataset.original] = s.value);
 
     state.users.forEach(u => {
         const origKey = u.originalRole || u.role || "";
-        u.role1Look = map1Look[origKey] || 'Sales Representative';
-        u.roleEstimator = mapEstimator[origKey] || 'Salesrep';
+        u.role1Look = map1Look[origKey] || map1Look[""] || 'Sales Representative';
     });
 
     state.status = 'active';
@@ -433,101 +429,79 @@ function applyConfigAndStart() {
 }
 
 function renderQueue() {
-    if (state.currentIndex >= state.users.length) {
-        document.getElementById('ui-queue').innerHTML = `<div style="text-align:center; padding:30px; color:#16a34a; font-weight:bold; font-size:18px; background:#f0fdf4; border-radius:14px;">✅ BATCH COMPLETE</div>`;
+    const listContainer = document.getElementById('full-user-list');
+    if (!listContainer) return;
+
+    const total = state.users.length;
+    const completedCount = state.users.filter(u => u.completed).length;
+    const percent = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+
+    const progressText = document.getElementById('progress-text');
+    if (progressText) progressText.innerText = `Progress: ${completedCount} / ${total} Completed`;
+
+    const progressPercent = document.getElementById('progress-percent');
+    if (progressPercent) progressPercent.innerText = `${percent}%`;
+
+    const progressFill = document.getElementById('progress-fill');
+    if (progressFill) progressFill.style.width = `${percent}%`;
+
+    const listCount = document.getElementById('user-list-count');
+    if (listCount) listCount.innerText = `${completedCount}/${total} Completed`;
+
+    if (total === 0) {
+        listContainer.innerHTML = `<div style="text-align:center; padding:20px; color:#64748b;">No users in batch.</div>`;
         return;
     }
 
-    const user = state.users[state.currentIndex];
-    saveState();
+    listContainer.innerHTML = state.users.map((u, i) => {
+        const isCompleted = !!u.completed;
 
-    const copyBox = document.getElementById('quick-copy-chips');
-    if (copyBox) {
-        copyBox.innerHTML = '';
-        const fields = [
-            { label: 'First', val: user.firstName },
-            { label: 'Last', val: user.lastName },
-            { label: 'Full Name', val: `${user.firstName} ${user.lastName}`.trim() },
-            { label: 'Email', val: user.email },
-            { label: 'Phone', val: user.phone },
-            { label: 'Estimator Role', val: user.roleEstimator || user.role },
-            { label: '1Look Role', val: user.role1Look || user.role },
-            { label: 'Branch', val: user.branch },
-            { label: 'Manager', val: user.managerName || user.managerEmail }
-        ].filter(f => f.val);
+        let cardClass = "user-card-item";
+        if (isCompleted) cardClass += " completed-user";
 
-        fields.forEach(f => {
-            const chip = document.createElement('span');
-            chip.className = 'copy-chip';
-            chip.innerHTML = `📋 <span style="color:#6b7280; margin-right:4px;">${f.label}:</span> <b>${f.val}</b>`;
-            chip.onclick = () => copyText(f.val, f.label);
-            copyBox.appendChild(chip);
-        });
+        return `
+            <div class="${cardClass}">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+                    <span style="font-size:14px; font-weight:700; color:#1e1b4b;">${i + 1}. ${u.firstName} ${u.lastName}</span>
+                    <button type="button" class="btn-check-toggle ${isCompleted ? 'completed' : ''}" onclick="toggleUserComplete(${i})">
+                        ${isCompleted ? '✓ Created' : '☐ Mark Done'}
+                    </button>
+                </div>
+                <div style="font-size:12px; color:#475569; display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+                    <div>📧 ${u.email || '-'}</div>
+                    <div>📱 ${u.phone || '-'}</div>
+                    <div style="grid-column: span 2; color:#16a34a; font-weight:700;">🟢 Role: ${u.role1Look || 'Sales Representative'}</div>
+                    ${u.branch ? `<div style="grid-column: span 2; color:#6d28d9; font-weight:600;">🏢 Location: ${u.branch}</div>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+window.toggleUserComplete = function(idx) {
+    if (state.users[idx]) {
+        state.users[idx].completed = !state.users[idx].completed;
+        saveState();
+        renderQueue();
     }
+};
 
-    const makeClickCopy = (id, val, label) => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.innerText = val || '-';
-            if (val && val !== '-') {
-                el.style.cursor = 'pointer';
-                el.onclick = () => copyText(val, label);
-            }
-        }
-    };
+function setupBookmarklet() {
+    const origin = window.location.origin;
+    const widgetUrl = `${origin}/widget.js`;
+    const code = `javascript:(function(){if(window.oneLookWidgetLoaded){const w=document.getElementById('one-look-floating-widget');if(w)w.style.display=w.style.display==='none'?'block':'none';}else{window.oneLookWidgetLoaded=true;var s=document.createElement('script');s.src='${widgetUrl}?v='+Date.now();document.body.appendChild(s);}})();`;
 
-    makeClickCopy('c-name', `${user.firstName} ${user.lastName}`.trim(), 'Full Name');
-    makeClickCopy('c-email', user.email, 'Email');
-    makeClickCopy('c-phone', user.phone, 'Phone');
-    makeClickCopy('c-role-1look', user.role1Look || 'Sales Representative', '1Look Role');
-    makeClickCopy('c-role-estimator', user.roleEstimator || 'Salesrep', 'Estimator Role');
-    makeClickCopy('c-manager', user.managerName || user.managerEmail, 'Manager');
-    makeClickCopy('c-branch', user.branch, 'Branch');
-    makeClickCopy('c-admin', state.adminUnit, 'Admin Unit');
-
-    document.getElementById('queue-counter').innerText = `User ${state.currentIndex + 1} of ${state.users.length}`;
-}
-
-function copyText(text, label = "") {
-    if (!text) return;
-    navigator.clipboard.writeText(text).then(() => {
-        showToast(`📋 Copied ${label}: "${text}"`, "success");
-    }).catch(e => {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        showToast(`📋 Copied ${label}: "${text}"`, "success");
-    });
-}
-
-function copyUserTSV() {
-    if (state.currentIndex >= state.users.length) return;
-    const u = state.users[state.currentIndex];
-    const row = [u.firstName, u.lastName, u.email, u.phone, u.roleEstimator || u.role, u.branch].join('\t');
-    copyText(row, "TSV Row");
-}
-
-function copyUserSummaryBlock() {
-    if (state.currentIndex >= state.users.length) return;
-    const u = state.users[state.currentIndex];
-    const block = `First Name: ${u.firstName}\nLast Name: ${u.lastName}\nEmail: ${u.email}\nPhone: ${u.phone}\nEstimator Role: ${u.roleEstimator || u.role}\n1Look Role: ${u.role1Look || u.role}\nBranch: ${u.branch || 'None'}`;
-    copyText(block, "Summary Block");
-}
-
-function nextUser() {
-    state.currentIndex++;
-    saveState();
-    render();
+    const a = document.getElementById('bookmarklet-link');
+    if (a) {
+        a.href = code;
+    }
 }
 
 function showToast(msg, type = 'info') {
-    let t = document.getElementById('panel-toast');
+    const t = document.getElementById('panel-toast');
     if (t) {
         t.innerText = msg;
-        t.style.background = type === 'error' ? '#dc2626' : (type === 'success' ? '#16a34a' : '#6d28d9');
+        t.style.background = type === 'error' ? '#ef4444' : (type === 'success' ? '#10b981' : '#7c3aed');
         t.style.opacity = '1';
         setTimeout(() => { t.style.opacity = '0'; }, 3000);
     }

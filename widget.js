@@ -8,23 +8,22 @@
     // --- CONFIGURATION ---
     const CONFIG = {
         keywords: {
-            fullName: ["name", "full name", "employee", "person", "user"],
-            email: ["email", "e-mail", "mail"],
-            phone: ["phone", "mobile", "cell", "contact"],
-            role: ["role", "job", "title", "position", "permissions"],
-            branch: ["main branch", "branch", "location", "office", "site", "city", "county", "town", "territory", "area"]
+            firstName: ["first name", "firstname", "first", "primer nombre", "given name"],
+            lastName: ["last name", "lastname", "last", "apellido", "family name"],
+            fullName: ["full name", "fullname", "name", "nombre completo", "employee", "person", "user"],
+            email: ["email", "e-mail", "mail", "correo"],
+            phone: ["phone number", "phone", "mobile", "cell", "contact", "teléfono", "celular"],
+            role: ["role", "job", "title", "position", "permissions", "cargo", "puesto"],
+            branch: ["main branch", "branch", "location", "office", "site", "city", "county", "town", "territory", "area", "locations"]
         },
-        roles1Look: ["Sales Representative", "Installer", "Sales Manager", "Finance Manager", "Admin", "User"],
-        rolesEstimator: ["Salesrep", "Admin", "Org Admin", "User", "sales_manager", "Custom"]
+        roles1Look: ["Sales Representative", "Installer", "Sales Manager", "Finance Manager", "Admin", "User"]
     };
 
     // --- STATE ---
     let state = {
         users: [],
         currentIndex: 0,
-        adminUnit: "",
         sendWelcome: true,
-        targetSystem: "both",
         status: "wizard"
     };
 
@@ -40,13 +39,13 @@
         position: fixed;
         top: 20px;
         right: 20px;
-        width: 350px;
-        max-width: 90vw;
+        width: 360px;
+        max-width: 92vw;
         max-height: 85vh;
         background: #ffffff;
-        border: 2px solid #c4b5fd;
-        border-radius: 16px;
-        box-shadow: 0 10px 30px rgba(109, 40, 217, 0.25);
+        border: 1.5px solid #ddd6fe;
+        border-radius: 18px;
+        box-shadow: 0 12px 36px rgba(109, 40, 217, 0.22);
         z-index: 9999999;
         font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
         font-size: 12px;
@@ -58,13 +57,13 @@
     `;
 
     widget.innerHTML = `
-        <div id="widget-header" style="background: #f3e8ff; border-bottom: 1.5px solid #e9d5ff; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: move; user-select: none;">
-            <div style="font-weight: 700; color: #6d28d9; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-                ⚡ 1Look & Estimator Widget
+        <div id="widget-header" style="background: linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%); border-bottom: 1px solid #ddd6fe; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: move; user-select: none;">
+            <div style="font-weight: 800; color: #6d28d9; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                ⚡ 1Look Auto-Fill Widget
             </div>
             <div style="display: flex; gap: 6px;">
-                <button type="button" id="btn-widget-reset" style="background:#ede9fe; border:1px solid #c4b5fd; color:#6d28d9; padding:2px 8px; border-radius:6px; font-size:10px; cursor:pointer; font-weight:600;">🔄 Reset</button>
-                <button type="button" id="btn-widget-close" style="background:#fee2e2; border:1px solid #fca5a5; color:#dc2626; padding:2px 8px; border-radius:6px; font-size:11px; cursor:pointer; font-weight:bold;">✖</button>
+                <button type="button" id="btn-widget-reset" style="background:#ffffff; border:1px solid #cbd5e1; color:#475569; padding:3px 9px; border-radius:15px; font-size:10px; cursor:pointer; font-weight:700;">🔄 Reset</button>
+                <button type="button" id="btn-widget-close" style="background:#fee2e2; border:1px solid #fca5a5; color:#dc2626; padding:3px 9px; border-radius:15px; font-size:11px; cursor:pointer; font-weight:bold;">✖</button>
             </div>
         </div>
 
@@ -72,64 +71,42 @@
             <!-- STEP 1: PARSER -->
             <div id="w-step-1">
                 <div style="margin-bottom: 10px;">
-                    <label style="display:block; font-size:10px; color:#5b21b6; font-weight:700; margin-bottom:4px; text-transform:uppercase;">Target System(s)</label>
-                    <div style="display:flex; gap:4px;">
-                        <button type="button" class="w-sys-btn" id="wsys-both" style="flex:1; padding:6px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer;">Both</button>
-                        <button type="button" class="w-sys-btn" id="wsys-1look" style="flex:1; padding:6px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer;">1Look</button>
-                        <button type="button" class="w-sys-btn" id="wsys-estimator" style="flex:1; padding:6px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer;">Estimator</button>
-                    </div>
+                    <label style="display:block; font-size:10px; color:#6d28d9; font-weight:800; margin-bottom:4px; text-transform:uppercase;">Paste User Data (Excel / Text)</label>
+                    <textarea id="w-data" style="width:100%; height:160px; background:#faf5ff; border:1.5px solid #ddd6fe; border-radius:10px; padding:10px; font-size:11.5px; color:#1e1b4b; resize:vertical;" placeholder="Paste Excel rows or key-value text here..."></textarea>
                 </div>
 
-                <div style="margin-bottom: 10px;">
-                    <label style="display:block; font-size:10px; color:#5b21b6; font-weight:700; margin-bottom:4px; text-transform:uppercase;">Paste User Data (Excel / Email Text)</label>
-                    <textarea id="w-data" style="width:100%; height:140px; background:#faf5ff; border:1.5px solid #ddd6fe; border-radius:8px; padding:8px; font-size:11px; color:#1e1b4b; resize:vertical;" placeholder="Paste data here...&#10;Supports Excel tables or key-value text"></textarea>
-                </div>
-
-                <button type="button" id="w-btn-parse" style="width:100%; background:#7c3aed; color:white; border:none; padding:10px; border-radius:8px; font-weight:700; cursor:pointer; font-size:12px;">PARSE & REVIEW INFO ➡️</button>
-                <div id="w-error" style="color:#dc2626; font-size:11px; font-weight:600; margin-top:4px;"></div>
+                <button type="button" id="w-btn-parse" style="width:100%; background:linear-gradient(135deg, #7c3aed, #9333ea); color:white; border:none; padding:10px; border-radius:10px; font-weight:700; cursor:pointer; font-size:12px;">PARSE & REVIEW INFO ➡️</button>
+                <div id="w-error" style="color:#dc2626; font-size:11px; font-weight:700; margin-top:4px;"></div>
             </div>
 
             <!-- STEP 2: MAPPING -->
             <div id="w-step-2" style="display:none;">
-                <div style="font-weight:700; color:#6d28d9; margin-bottom:6px;" id="w-summary-header">PARSED USERS (0)</div>
-                <div id="w-preview" style="max-height:100px; overflow-y:auto; margin-bottom:10px;"></div>
-                
-                <div id="w-sec-1look" style="margin-bottom:10px;">
-                    <label style="display:block; font-size:10px; color:#6b7280;">Admin Unit</label>
-                    <input type="text" id="w-admin" placeholder="e.g. Finance Dept" style="width:100%; padding:6px 8px; background:#faf5ff; border:1px solid #ddd6fe; border-radius:6px; font-size:11px;">
-                </div>
+                <div style="font-weight:800; color:#6d28d9; margin-bottom:6px;" id="w-summary-header">PARSED USERS (0)</div>
+                <div id="w-preview" style="max-height:110px; overflow-y:auto; margin-bottom:10px;"></div>
 
-                <label style="display:block; font-size:10px; color:#5b21b6; font-weight:700; margin-bottom:4px; text-transform:uppercase;">Role Mappings</label>
-                <div id="w-mapping-list" style="max-height:120px; overflow-y:auto; margin-bottom:10px;"></div>
+                <label style="display:block; font-size:10px; color:#6d28d9; font-weight:800; margin-bottom:4px; text-transform:uppercase;">1LOOK Role Mappings</label>
+                <div id="w-mapping-list" style="max-height:140px; overflow-y:auto; margin-bottom:10px;"></div>
 
                 <div style="display:flex; gap:6px;">
-                    <button type="button" id="w-btn-back" style="flex:1; background:#f3e8ff; border:1px solid #ddd6fe; color:#6d28d9; padding:8px; border-radius:8px; font-weight:600; cursor:pointer;">⬅️ Back</button>
-                    <button type="button" id="w-btn-start" style="flex:2; background:#7c3aed; color:white; border:none; padding:8px; border-radius:8px; font-weight:700; cursor:pointer;">PROCEED TO BATCH 🚀</button>
+                    <button type="button" id="w-btn-back" style="flex:1; background:#f3e8ff; border:1px solid #ddd6fe; color:#6d28d9; padding:8px; border-radius:8px; font-weight:700; cursor:pointer;">⬅️ Back</button>
+                    <button type="button" id="w-btn-start" style="flex:2; background:linear-gradient(135deg, #7c3aed, #9333ea); color:white; border:none; padding:8px; border-radius:8px; font-weight:700; cursor:pointer;">START BATCH 🚀</button>
                 </div>
             </div>
 
-            <!-- STEP 3: QUEUE & DIRECT ON-PAGE FILLER -->
+            <!-- STEP 3: QUEUE & FULL USER LIST -->
             <div id="w-step-3" style="display:none;">
-                <div style="display:flex; gap:4px; margin-bottom:8px;">
-                    <button type="button" id="w-btn-fill-page" style="flex:2; background:#16a34a; color:white; border:none; padding:10px 4px; border-radius:8px; font-weight:700; cursor:pointer; font-size:12px; box-shadow:0 3px 10px rgba(22,163,74,0.25);">📝 FILL FORM NOW</button>
-                    <button type="button" id="w-btn-skip" style="flex:1; background:#f3e8ff; border:1px solid #ddd6fe; color:#6d28d9; padding:10px 4px; border-radius:8px; font-weight:600; cursor:pointer; font-size:11px;">NEXT ⏭</button>
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:8px; margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700;">
+                        <span id="w-progress-text">0 / 0 Completed</span>
+                        <span id="w-progress-percent" style="color:#10b981;">0%</span>
+                    </div>
+                    <div style="height:5px; background:#e2e8f0; border-radius:10px; overflow:hidden; margin-top:4px;">
+                        <div id="w-progress-fill" style="height:100%; background:#10b981; width:0%; transition:width 0.3s ease;"></div>
+                    </div>
                 </div>
 
-                <!-- QUICK COPY CHIPS -->
-                <div style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:8px; padding:8px; margin-bottom:8px;">
-                    <div style="font-size:10px; color:#6d28d9; font-weight:700; margin-bottom:4px;">📋 1-TOUCH QUICK COPY</div>
-                    <div id="w-copy-chips" style="display:flex; flex-wrap:wrap; gap:3px;"></div>
-                </div>
-
-                <div style="border:1.5px solid #c4b5fd; border-radius:10px; padding:10px; background:#ffffff; margin-bottom:8px;">
-                    <div id="wc-name" style="font-size:14px; font-weight:700; color:#2e1065; margin-bottom:4px;">-</div>
-                    <div style="font-size:11px; color:#1e1b4b;">📧 <span id="wc-email">-</span></div>
-                    <div style="font-size:11px; color:#1e1b4b;">📱 <span id="wc-phone">-</span></div>
-                    <div style="font-size:11px; color:#16a34a; font-weight:700; margin-top:2px;">🟢 1LOOK: <span id="wc-role-1look">-</span></div>
-                    <div style="font-size:11px; color:#ea580c; font-weight:700;">🟧 ESTIMATOR: <span id="wc-role-estimator">-</span></div>
-                </div>
-
-                <div style="text-align:center; padding:6px; background:#ede9fe; border-radius:6px; font-weight:700; color:#5b21b6; font-size:11px;" id="w-counter">0 Remaining</div>
+                <div style="font-size:10px; color:#64748b; font-weight:800; margin-bottom:6px; text-transform:uppercase;">USER BATCH LIST</div>
+                <div id="w-full-user-list" style="max-height:300px; overflow-y:auto;"></div>
             </div>
         </div>
         <div id="w-toast" style="position:absolute; bottom:8px; left:50%; transform:translateX(-50%); padding:6px 12px; background:#6d28d9; color:white; border-radius:15px; font-size:11px; font-weight:700; opacity:0; pointer-events:none; transition:all 0.2s ease;"></div>
@@ -161,46 +138,33 @@
     document.getElementById('btn-widget-close').onclick = () => widget.style.display = 'none';
     document.getElementById('btn-widget-reset').onclick = resetWidget;
 
-    document.getElementById('wsys-both').onclick = () => setSys('both');
-    document.getElementById('wsys-1look').onclick = () => setSys('1look');
-    document.getElementById('wsys-estimator').onclick = () => setSys('estimator');
-
     document.getElementById('w-btn-parse').onclick = parseAndInit;
     document.getElementById('w-btn-back').onclick = () => { state.status = 'wizard'; saveState(); render(); };
     document.getElementById('w-btn-start').onclick = applyConfigAndStart;
-    document.getElementById('w-btn-fill-page').onclick = fillFormOnPage;
-    document.getElementById('w-btn-skip').onclick = nextUser;
 
     render();
-
-    function setSys(sys) {
-        state.targetSystem = sys;
-        saveState();
-        render();
-    }
 
     function saveState() {
         localStorage.setItem('widget_app_state', JSON.stringify(state));
     }
 
     function resetWidget() {
-        if (confirm("Reset widget data?")) {
-            state = { users: [], currentIndex: 0, adminUnit: "", sendWelcome: true, targetSystem: "both", status: "wizard" };
-            localStorage.removeItem('widget_app_state');
-            document.getElementById('w-data').value = "";
-            render();
+        const incompleteCount = state.users.filter(u => !u.completed).length;
+        if (state.users.length > 0) {
+            let msg = "Reset widget data?";
+            if (incompleteCount > 0) {
+                msg = `⚠️ Warning: You have ${incompleteCount} user(s) that are NOT marked as completed!\n\nAre you sure you want to reset and clear all data?`;
+            }
+            if (!confirm(msg)) return;
         }
+
+        state = { users: [], currentIndex: 0, sendWelcome: true, status: "wizard" };
+        localStorage.removeItem('widget_app_state');
+        document.getElementById('w-data').value = "";
+        render();
     }
 
     function render() {
-        const sys = state.targetSystem || 'both';
-        document.getElementById('wsys-both').style.background = sys === 'both' ? '#7c3aed' : '#f3e8ff';
-        document.getElementById('wsys-both').style.color = sys === 'both' ? '#fff' : '#6d28d9';
-        document.getElementById('wsys-1look').style.background = sys === '1look' ? '#16a34a' : '#f3e8ff';
-        document.getElementById('wsys-1look').style.color = sys === '1look' ? '#fff' : '#6d28d9';
-        document.getElementById('wsys-estimator').style.background = sys === 'estimator' ? '#ea580c' : '#f3e8ff';
-        document.getElementById('wsys-estimator').style.color = sys === 'estimator' ? '#fff' : '#6d28d9';
-
         document.getElementById('w-step-1').style.display = state.status === 'wizard' ? 'block' : 'none';
         document.getElementById('w-step-2').style.display = state.status === 'config' ? 'block' : 'none';
         document.getElementById('w-step-3').style.display = state.status === 'active' ? 'block' : 'none';
@@ -209,10 +173,26 @@
         if (state.status === 'active') renderQueue();
     }
 
+    function cleanPhone(raw) {
+        if (!raw) return "555-555-5555";
+        const str = String(raw).trim();
+        const digits = str.replace(/\D/g, '');
+        if (digits.length === 10) {
+            return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+        }
+        if (digits.length === 11 && digits.startsWith('1')) {
+            return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+        }
+        if (digits.length >= 7 && digits.length <= 15) {
+            return str;
+        }
+        return "555-555-5555";
+    }
+
     function parseAndInit() {
         const raw = document.getElementById('w-data').value;
         if (!raw.trim()) { document.getElementById('w-error').innerText = "Please paste data first."; return; }
-        const users = raw.includes('\t') ? parseExcel(raw) : parseText(raw);
+        const users = raw.includes('\t') || raw.includes(',') ? parseExcel(raw) : parseText(raw);
         if (users.length === 0) { document.getElementById('w-error').innerText = "No user data found."; return; }
         state.users = users;
         state.currentIndex = 0;
@@ -221,49 +201,110 @@
         render();
     }
 
+    function isValidUser(u) {
+        if (!u.firstName && !u.email) return false;
+        const junk = [
+            "first name", "last name", "given name", "family name", "name", "full name",
+            "permissions", "role", "email", "phone", "mobile phone", "manager", "branch",
+            "location", "locations", "sales rep", "sales representative", "sales manager",
+            "finance manager", "installer", "admin", "user", "dealer name", "licensed",
+            "platform", "active", "deactivated"
+        ];
+        const fullName = (u.firstName + " " + u.lastName).toLowerCase().trim();
+        if (junk.includes(fullName) || junk.includes(u.firstName.toLowerCase()) || junk.includes(u.email.toLowerCase())) return false;
+        return true;
+    }
+
     function parseExcel(raw) {
         const lines = raw.split(/\r?\n/).filter(l => l.trim());
         if (lines.length === 0) return [];
-        const cols = lines[0].split('\t').map(c => c.trim().toLowerCase());
-        const mapping = { fullName: cols.findIndex(c => c.includes('name')), email: cols.findIndex(c => c.includes('email')), phone: cols.findIndex(c => c.includes('phone')), role: cols.findIndex(c => c.includes('role')) };
-        const data = lines[0].includes('\t') && (mapping.fullName > -1 || mapping.email > -1) ? lines.slice(1) : lines;
+
+        const isTab = lines[0].includes('\t');
+        const delim = isTab ? '\t' : ',';
+        const cols = lines[0].split(delim).map(c => c.trim().toLowerCase());
+        const mapping = {
+            firstName: cols.findIndex(c => c.includes('first')),
+            lastName: cols.findIndex(c => c.includes('last')),
+            fullName: cols.findIndex(c => c.includes('name')),
+            email: cols.findIndex(c => c.includes('email')),
+            phone: cols.findIndex(c => c.includes('phone') || c.includes('mobile')),
+            role: cols.findIndex(c => c.includes('role')),
+            branch: cols.findIndex(c => c.includes('location') || c.includes('branch'))
+        };
+        const data = (mapping.fullName > -1 || mapping.email > -1 || mapping.firstName > -1) ? lines.slice(1) : lines;
 
         return data.map(line => {
-            const parts = line.split('\t');
-            const name = parts[mapping.fullName > -1 ? mapping.fullName : 0] || "";
-            const nameParts = name.trim().split(' ');
+            const parts = line.split(delim);
+            let rawFirstName = "";
+            let rawLastName = "";
+
+            if (mapping.firstName > -1 && mapping.lastName > -1) {
+                rawFirstName = parts[mapping.firstName]?.trim() || "";
+                rawLastName = parts[mapping.lastName]?.trim() || "";
+            } else {
+                const rawName = parts[mapping.fullName > -1 ? mapping.fullName : 0]?.trim() || "";
+                const nameParts = rawName.split(/\s+/).filter(Boolean);
+                if (nameParts.length > 1) {
+                    rawLastName = nameParts.pop();
+                    rawFirstName = nameParts.join(' ');
+                } else {
+                    rawFirstName = rawName;
+                }
+            }
+
+            const firstName = rawFirstName.split(/\s+/).filter(Boolean).join('.');
+            const lastName = rawLastName;
+
+            let rawPhone = "";
+            if (mapping.phone > -1) {
+                const candidate = parts[mapping.phone]?.trim() || "";
+                if (candidate.replace(/\D/g, '').length >= 7) rawPhone = candidate;
+            }
+            if (!rawPhone) {
+                const foundCell = parts.find(c => {
+                    const d = c.trim().replace(/\D/g, '');
+                    return d.length >= 7 && d.length <= 15 && /(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\b\d{10}\b/.test(c);
+                });
+                if (foundCell) rawPhone = foundCell.trim();
+            }
+
             return {
-                firstName: nameParts[0] || "",
-                lastName: nameParts.length > 1 ? nameParts.slice(1).join(' ') : "",
-                email: parts[mapping.email > -1 ? mapping.email : 1] || "",
-                phone: parts[mapping.phone > -1 ? mapping.phone : 2] || "",
-            const uObj = {
-                firstName: nameParts[0] || "",
-                lastName: nameParts.length > 1 ? nameParts.slice(1).join(' ') : "",
-                email: parts[mapping.email > -1 ? mapping.email : 1] || "",
-                phone: parts[mapping.phone > -1 ? mapping.phone : 2] || "555-555-5555",
-                role: parts[mapping.role > -1 ? mapping.role : 3] || "",
-                originalRole: parts[mapping.role > -1 ? mapping.role : 3] || ""
+                firstName,
+                lastName,
+                email: parts[mapping.email > -1 ? mapping.email : 1]?.trim() || "",
+                phone: cleanPhone(rawPhone),
+                role: parts[mapping.role > -1 ? mapping.role : 3]?.trim() || "",
+                branch: mapping.branch > -1 ? parts[mapping.branch]?.trim() : "",
+                originalRole: parts[mapping.role > -1 ? mapping.role : 3]?.trim() || "",
+                completed: false
             };
-            if (!uObj.phone) uObj.phone = "555-555-5555";
-            return uObj;
-        }).filter(u => u.firstName || u.email);
+        }).filter(u => isValidUser(u));
     }
 
     function parseText(text) {
         const blocks = text.split(/\n\s*\n/).filter(b => b.trim());
         return blocks.map(b => {
-            const u = { firstName: "", lastName: "", email: "", phone: "", role: "" };
+            let rawFirstName = "", rawLastName = "", email = "", rawPhone = "", role = "", branch = "";
             b.split('\n').forEach(l => {
-                if (l.match(/first/i)) u.firstName = l.split(':')[1]?.trim() || "";
-                else if (l.match(/last/i)) u.lastName = l.split(':')[1]?.trim() || "";
-                else if (l.match(/email/i)) u.email = l.split(':')[1]?.trim() || "";
-                else if (l.match(/phone|mobile|cell|tel/i)) u.phone = l.split(':')[1]?.trim() || "";
-                else if (l.match(/role/i)) { u.role = l.split(':')[1]?.trim() || ""; u.originalRole = u.role; }
+                if (l.match(/first/i)) rawFirstName = l.split(':')[1]?.trim() || "";
+                else if (l.match(/last/i)) rawLastName = l.split(':')[1]?.trim() || "";
+                else if (l.match(/email/i)) email = l.split(':')[1]?.trim() || "";
+                else if (l.match(/phone|mobile|cell|tel/i)) rawPhone = l.split(':')[1]?.trim() || "";
+                else if (l.match(/role/i)) role = l.split(':')[1]?.trim() || "";
+                else if (l.match(/branch|location/i)) branch = l.split(':')[1]?.trim() || "";
             });
-            if (!u.phone) u.phone = "555-555-5555";
-            return u;
-        }).filter(u => u.firstName || u.email);
+
+            const firstName = rawFirstName.split(/\s+/).filter(Boolean).join('.');
+            const lastName = rawLastName;
+
+            return {
+                firstName, lastName, email,
+                phone: cleanPhone(rawPhone),
+                role, branch,
+                originalRole: role,
+                completed: false
+            };
+        }).filter(u => isValidUser(u));
     }
 
     function renderConfig() {
@@ -285,15 +326,9 @@
             d.innerHTML = `
                 <div style="font-weight:bold; font-size:11px; color:#4c1d95;">Role: "${r || 'Default'}"</div>
                 <div style="margin-top:2px;">
-                    <label style="font-size:9px; color:#16a34a;">1LOOK ROLE</label>
+                    <label style="font-size:9px; color:#16a34a; font-weight:700;">1LOOK ROLE</label>
                     <select class="w-map-1look" data-orig="${r}" style="width:100%; font-size:11px; padding:3px; border-radius:4px; border:1px solid #ddd6fe;">
                         ${CONFIG.roles1Look.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
-                    </select>
-                </div>
-                <div style="margin-top:2px;">
-                    <label style="font-size:9px; color:#ea580c;">ESTIMATOR ROLE</label>
-                    <select class="w-map-estimator" data-orig="${r}" style="width:100%; font-size:11px; padding:3px; border-radius:4px; border:1px solid #ddd6fe;">
-                        ${CONFIG.rolesEstimator.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
                     </select>
                 </div>
             `;
@@ -302,14 +337,12 @@
     }
 
     function applyConfigAndStart() {
-        const m1 = {}, me = {};
+        const m1 = {};
         document.querySelectorAll('.w-map-1look').forEach(s => m1[s.dataset.orig] = s.value);
-        document.querySelectorAll('.w-map-estimator').forEach(s => me[s.dataset.orig] = s.value);
 
         state.users.forEach(u => {
             const k = u.originalRole || u.role || "";
             u.role1Look = m1[k] || 'Sales Representative';
-            u.roleEstimator = me[k] || 'Salesrep';
         });
 
         state.status = 'active';
@@ -318,41 +351,54 @@
     }
 
     function renderQueue() {
-        if (state.currentIndex >= state.users.length) {
-            document.getElementById('w-step-3').innerHTML = `<div style="text-align:center; padding:20px; color:#16a34a; font-weight:bold; font-size:14px;">✅ BATCH COMPLETE</div>`;
+        const container = document.getElementById('w-full-user-list');
+        if (!container) return;
+
+        const total = state.users.length;
+        const completed = state.users.filter(u => u.completed).length;
+        const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        document.getElementById('w-progress-text').innerText = `${completed} / ${total} Completed`;
+        document.getElementById('w-progress-percent').innerText = `${percent}%`;
+        document.getElementById('w-progress-fill').style.width = `${percent}%`;
+
+        if (total === 0) {
+            container.innerHTML = `<div style="text-align:center; padding:15px; color:#64748b;">No users in batch.</div>`;
             return;
         }
 
-        const user = state.users[state.currentIndex];
-        document.getElementById('wc-name').innerText = `${user.firstName} ${user.lastName}`;
-        document.getElementById('wc-email').innerText = user.email || "-";
-        document.getElementById('wc-phone').innerText = user.phone || "-";
-        document.getElementById('wc-role-1look').innerText = user.role1Look || "Sales Representative";
-        document.getElementById('wc-role-estimator').innerText = user.roleEstimator || "Salesrep";
-
-        const chips = document.getElementById('w-copy-chips');
-        chips.innerHTML = '';
-        [
-            { l: 'First', v: user.firstName }, { l: 'Last', v: user.lastName },
-            { l: 'Email', v: user.email }, { l: 'Phone', v: user.phone },
-            { l: 'Role Est.', v: user.roleEstimator }, { l: 'Role 1L', v: user.role1Look }
-        ].filter(f => f.v).forEach(f => {
-            const c = document.createElement('span');
-            c.style.cssText = 'padding:3px 7px; background:#fff; border:1px solid #c4b5fd; color:#5b21b6; border-radius:12px; font-size:10px; cursor:pointer; font-weight:600;';
-            c.innerText = `📋 ${f.l}: ${f.v}`;
-            c.onclick = () => {
-                navigator.clipboard.writeText(f.v);
-                toast(`Copied ${f.l}: ${f.v}`);
-            };
-            chips.appendChild(c);
-        });
-
-        document.getElementById('w-counter').innerText = `User ${state.currentIndex + 1} of ${state.users.length}`;
+        container.innerHTML = state.users.map((u, i) => {
+            const isDone = !!u.completed;
+            return `
+                <div style="background:${isDone ? '#f0fdf4' : '#ffffff'}; border:1px solid ${isDone ? '#bbf7d0' : '#e2e8f0'}; border-radius:10px; padding:10px; margin-bottom:6px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <b style="font-size:12px; color:${isDone ? '#166534' : '#1e1b4b'};">${i + 1}. ${u.firstName} ${u.lastName}</b>
+                        <button type="button" style="padding:3px 8px; border-radius:12px; font-size:10px; font-weight:700; border:1px solid ${isDone ? '#059669' : '#cbd5e1'}; background:${isDone ? '#10b981' : '#ffffff'}; color:${isDone ? '#ffffff' : '#64748b'}; cursor:pointer;" onclick="window.widgetToggleDone(${i})">
+                            ${isDone ? '✓ Created' : '☐ Mark Done'}
+                        </button>
+                    </div>
+                    <div style="font-size:11px; color:#64748b;">📧 ${u.email || '-'} | 📱 ${u.phone || '-'}</div>
+                    <div style="font-size:11px; color:#16a34a; font-weight:700; margin-top:2px;">🟢 Role: ${u.role1Look || 'Sales Representative'}</div>
+                    <button type="button" style="width:100%; margin-top:6px; background:#16a34a; color:white; border:none; padding:6px; border-radius:6px; font-weight:700; font-size:11px; cursor:pointer;" onclick="window.widgetFillUser(${i})">
+                        📝 FILL 1LOOK FORM NOW
+                    </button>
+                </div>
+            `;
+        }).join('');
     }
 
-    function fillFormOnPage() {
-        if (state.currentIndex >= state.users.length) return;
-        const u = state.users[state.currentIndex];
+    window.widgetToggleDone = function(i) {
+        if (state.users[i]) {
+            state.users[i].completed = !state.users[i].completed;
+            saveState();
+            renderQueue();
+        }
+    };
+
+    window.widgetFillUser = function(i) {
+        if (i >= state.users.length) return;
+        state.currentIndex = i;
+        const u = state.users[i];
 
         function setInput(keywords, val, isEmail = false) {
             if (!val) return;
@@ -445,25 +491,26 @@
             }
         }
 
-        setInput(["first name", "firstname", "first", "primer nombre"], u.firstName);
-        setInput(["last name", "lastname", "last", "apellido"], u.lastName);
+        setInput(["first name", "firstname", "first", "primer nombre", "given name"], u.firstName);
+        setInput(["last name", "lastname", "last", "apellido", "family name"], u.lastName);
         setInput(["email", "mail", "correo"], u.email, true);
         setInput(["phone", "mobile", "cell", "teléfono"], u.phone);
 
-        toast(`✅ Form Filled for ${u.firstName}!`, 'success');
-    }
-
-    function nextUser() {
-        state.currentIndex++;
+        // Auto mark as completed
+        state.users[i].completed = true;
         saveState();
-        render();
-    }
+        renderQueue();
+
+        toast(`✅ Form Filled for ${u.firstName}!`, 'success');
+    };
 
     function toast(msg, type = 'info') {
         const t = document.getElementById('w-toast');
-        t.innerText = msg;
-        t.style.background = type === 'success' ? '#16a34a' : '#6d28d9';
-        t.style.opacity = '1';
-        setTimeout(() => t.style.opacity = '0', 2500);
+        if (t) {
+            t.innerText = msg;
+            t.style.background = type === 'success' ? '#10b981' : '#7c3aed';
+            t.style.opacity = '1';
+            setTimeout(() => t.style.opacity = '0', 2500);
+        }
     }
 })();
