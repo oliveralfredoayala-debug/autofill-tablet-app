@@ -464,10 +464,10 @@ function renderConfigUI() {
         previewBox.innerHTML = state.users.map((u, i) => {
             const roleDisplay = u.branch ? `${u.role || 'Sales Rep'} (${u.branch})` : (u.role || 'Sales Rep');
             return `
-                <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:10px; padding:8px 10px; margin-bottom:6px;">
-                    <b style="color:#2e1065;">${i + 1}. ${u.firstName} ${u.lastName}</b>
-                    <div style="color:#64748b; font-size:11px; margin-top:2px;">📧 ${u.email || 'No email'} | 📱 ${u.phone || 'No phone'}</div>
-                    <div style="color:#6d28d9; font-weight:600; font-size:11px; margin-top:2px;">💼 Role: ${roleDisplay}</div>
+                <div style="background:#fbf8f4; border:1px solid #e6ded3; border-radius:10px; padding:8px 10px; margin-bottom:6px;">
+                    <b style="color:#0f4c47;">${i + 1}. ${u.firstName} ${u.lastName}</b>
+                    <div style="color:#5c6f6a; font-size:11px; margin-top:2px;">📧 ${u.email || 'No email'} | 📱 ${u.phone || 'No phone'}</div>
+                    <div style="color:#0d9488; font-weight:600; font-size:11px; margin-top:2px;">💼 Role: ${roleDisplay}</div>
                 </div>
             `;
         }).join('');
@@ -482,7 +482,7 @@ function renderConfigUI() {
 
     rolesFound.forEach(role => {
         const div = document.createElement('div');
-        div.style.cssText = "margin-bottom:10px; padding:10px; background:#faf5ff; border:1px solid #e9d5ff; border-radius:10px;";
+        div.style.cssText = "margin-bottom:10px; padding:10px; background:#fbf8f4; border:1px solid #e6ded3; border-radius:10px;";
 
         const rLower = (role || "").toLowerCase();
         let def1Look = 'Sales Representative';
@@ -495,9 +495,9 @@ function renderConfigUI() {
         else if (rLower.includes('user')) { def1Look = 'User'; }
 
         div.innerHTML = `
-            <div style="margin-bottom:4px; font-weight:700; font-size:11px; color:#4c1d95;">Parsed Role: "${role || '(Default / Empty)'}"</div>
+            <div style="margin-bottom:4px; font-weight:700; font-size:11px; color:#0f4c47;">Parsed Role: "${role || '(Default / Empty)'}"</div>
             <div>
-                <label style="color:#16a34a; font-size:10px; font-weight:700;">🟢 1LOOK ROLE</label>
+                <label style="color:#e87a47; font-size:10px; font-weight:700;">🟢 1LOOK ROLE</label>
                 <select class="map-select-1look" data-original="${role}">
                     ${CONFIG.roles1Look.map(r => `<option value="${r}" ${r === def1Look ? 'selected' : ''}>${r}</option>`).join('')}
                 </select>

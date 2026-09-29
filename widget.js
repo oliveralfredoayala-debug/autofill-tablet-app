@@ -42,13 +42,13 @@
         max-width: 92vw;
         max-height: 85vh;
         background: #ffffff;
-        border: 1.5px solid #ddd6fe;
+        border: 1.5px solid #b3e2d8;
         border-radius: 18px;
-        box-shadow: 0 12px 36px rgba(109, 40, 217, 0.22);
+        box-shadow: 0 12px 36px rgba(15, 76, 71, 0.22);
         z-index: 9999999;
         font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
         font-size: 12px;
-        color: #1e1b4b;
+        color: #113a36;
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -56,12 +56,12 @@
     `;
 
     widget.innerHTML = `
-        <div id="widget-header" style="background: linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%); border-bottom: 1px solid #ddd6fe; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: move; user-select: none;">
-            <div style="font-weight: 800; color: #6d28d9; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+        <div id="widget-header" style="background: linear-gradient(135deg, #eaf5f2 0%, #d4ede7 100%); border-bottom: 1px solid #b3e2d8; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: move; user-select: none;">
+            <div style="font-weight: 800; color: #0f4c47; font-size: 13px; display: flex; align-items: center; gap: 6px;">
                 ⚡ 1Look Auto-Fill Widget
             </div>
             <div style="display: flex; gap: 6px;">
-                <button type="button" id="btn-widget-reset" style="background:#ffffff; border:1px solid #cbd5e1; color:#475569; padding:3px 9px; border-radius:15px; font-size:10px; cursor:pointer; font-weight:700;">🔄 Reset</button>
+                <button type="button" id="btn-widget-reset" style="background:#ffffff; border:1px solid #d9d0c3; color:#4a5d58; padding:3px 9px; border-radius:15px; font-size:10px; cursor:pointer; font-weight:700;">🔄 Reset</button>
                 <button type="button" id="btn-widget-close" style="background:#fee2e2; border:1px solid #fca5a5; color:#dc2626; padding:3px 9px; border-radius:15px; font-size:11px; cursor:pointer; font-weight:bold;">✖</button>
             </div>
         </div>
@@ -70,45 +70,45 @@
             <!-- STEP 1: PARSER -->
             <div id="w-step-1">
                 <div style="margin-bottom: 10px;">
-                    <label style="display:block; font-size:10px; color:#6d28d9; font-weight:800; margin-bottom:4px; text-transform:uppercase;">Paste User Data (Excel / Text)</label>
-                    <textarea id="w-data" style="width:100%; height:160px; background:#faf5ff; border:1.5px solid #ddd6fe; border-radius:10px; padding:10px; font-size:11.5px; color:#1e1b4b; resize:vertical;" placeholder="Paste Excel rows or key-value text here..."></textarea>
+                    <label style="display:block; font-size:10px; color:#0f4c47; font-weight:800; margin-bottom:4px; text-transform:uppercase;">Paste User Data (Excel / Text)</label>
+                    <textarea id="w-data" style="width:100%; height:160px; background:#fbf8f4; border:1.5px solid #e6ded3; border-radius:10px; padding:10px; font-size:11.5px; color:#113a36; resize:vertical;" placeholder="Paste Excel rows or key-value text here..."></textarea>
                 </div>
 
-                <button type="button" id="w-btn-parse" style="width:100%; background:linear-gradient(135deg, #7c3aed, #9333ea); color:white; border:none; padding:10px; border-radius:10px; font-weight:700; cursor:pointer; font-size:12px;">PARSE & REVIEW INFO ➡️</button>
+                <button type="button" id="w-btn-parse" style="width:100%; background:linear-gradient(135deg, #0f4c47, #0d9488); color:white; border:none; padding:10px; border-radius:10px; font-weight:700; cursor:pointer; font-size:12px;">PARSE & REVIEW INFO ➡️</button>
                 <div id="w-error" style="color:#dc2626; font-size:11px; font-weight:700; margin-top:4px;"></div>
             </div>
 
             <!-- STEP 2: MAPPING -->
             <div id="w-step-2" style="display:none;">
-                <div style="font-weight:800; color:#6d28d9; margin-bottom:6px;" id="w-summary-header">PARSED USERS (0)</div>
+                <div style="font-weight:800; color:#0f4c47; margin-bottom:6px;" id="w-summary-header">PARSED USERS (0)</div>
                 <div id="w-preview" style="max-height:110px; overflow-y:auto; margin-bottom:10px;"></div>
 
-                <label style="display:block; font-size:10px; color:#6d28d9; font-weight:800; margin-bottom:4px; text-transform:uppercase;">1LOOK Role Mappings</label>
+                <label style="display:block; font-size:10px; color:#0f4c47; font-weight:800; margin-bottom:4px; text-transform:uppercase;">1LOOK Role Mappings</label>
                 <div id="w-mapping-list" style="max-height:140px; overflow-y:auto; margin-bottom:10px;"></div>
 
                 <div style="display:flex; gap:6px;">
-                    <button type="button" id="w-btn-back" style="flex:1; background:#f3e8ff; border:1px solid #ddd6fe; color:#6d28d9; padding:8px; border-radius:8px; font-weight:700; cursor:pointer;">⬅️ Back</button>
-                    <button type="button" id="w-btn-start" style="flex:2; background:linear-gradient(135deg, #7c3aed, #9333ea); color:white; border:none; padding:8px; border-radius:8px; font-weight:700; cursor:pointer;">START BATCH 🚀</button>
+                    <button type="button" id="w-btn-back" style="flex:1; background:#eaf5f2; border:1px solid #b3e2d8; color:#0f4c47; padding:8px; border-radius:8px; font-weight:700; cursor:pointer;">⬅️ Back</button>
+                    <button type="button" id="w-btn-start" style="flex:2; background:linear-gradient(135deg, #0f4c47, #0d9488); color:white; border:none; padding:8px; border-radius:8px; font-weight:700; cursor:pointer;">START BATCH 🚀</button>
                 </div>
             </div>
 
             <!-- STEP 3: QUEUE & FULL USER LIST WITH CLICKABLE FIELDS -->
             <div id="w-step-3" style="display:none;">
-                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:8px; margin-bottom:10px;">
+                <div style="background:#f8f3ec; border:1px solid #e6ded3; border-radius:10px; padding:8px; margin-bottom:10px;">
                     <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700;">
                         <span id="w-progress-text">0 / 0 Completed</span>
-                        <span id="w-progress-percent" style="color:#10b981;">0%</span>
+                        <span id="w-progress-percent" style="color:#0d9488;">0%</span>
                     </div>
-                    <div style="height:5px; background:#e2e8f0; border-radius:10px; overflow:hidden; margin-top:4px;">
-                        <div id="w-progress-fill" style="height:100%; background:#10b981; width:0%; transition:width 0.3s ease;"></div>
+                    <div style="height:5px; background:#e6ded3; border-radius:10px; overflow:hidden; margin-top:4px;">
+                        <div id="w-progress-fill" style="height:100%; background:linear-gradient(90deg, #0d9488, #e87a47); width:0%; transition:width 0.3s ease;"></div>
                     </div>
                 </div>
 
-                <div style="font-size:10px; color:#64748b; font-weight:800; margin-bottom:6px; text-transform:uppercase;">USER BATCH LIST - 💡 TAP FIELD TO COPY</div>
+                <div style="font-size:10px; color:#5c6f6a; font-weight:800; margin-bottom:6px; text-transform:uppercase;">USER BATCH LIST - 💡 TAP FIELD TO COPY</div>
                 <div id="w-full-user-list" style="max-height:320px; overflow-y:auto;"></div>
             </div>
         </div>
-        <div id="w-toast" style="position:absolute; bottom:8px; left:50%; transform:translateX(-50%); padding:6px 12px; background:#6d28d9; color:white; border-radius:15px; font-size:11px; font-weight:700; opacity:0; pointer-events:none; transition:all 0.2s ease;"></div>
+        <div id="w-toast" style="position:absolute; bottom:8px; left:50%; transform:translateX(-50%); padding:6px 12px; background:#0f4c47; color:white; border-radius:15px; font-size:11px; font-weight:700; opacity:0; pointer-events:none; transition:all 0.2s ease;"></div>
     `;
 
     document.body.appendChild(widget);
@@ -309,8 +309,8 @@
     function renderConfig() {
         document.getElementById('w-summary-header').innerText = `PARSED USERS (${state.users.length})`;
         document.getElementById('w-preview').innerHTML = state.users.map((u, i) => `
-            <div style="font-size:11px; padding:4px 6px; background:#faf5ff; border:1px solid #e9d5ff; border-radius:6px; margin-bottom:4px;">
-                <b>${i + 1}. ${u.firstName} ${u.lastName}</b> (${u.email || 'No email'})
+            <div style="font-size:11px; padding:4px 6px; background:#fbf8f4; border:1px solid #e6ded3; border-radius:6px; margin-bottom:4px;">
+                <b style="color:#0f4c47;">${i + 1}. ${u.firstName} ${u.lastName}</b> (${u.email || 'No email'})
             </div>
         `).join('');
 
@@ -321,12 +321,12 @@
 
         roles.forEach(r => {
             const d = document.createElement('div');
-            d.style.cssText = "margin-bottom:6px; padding:6px; background:#faf5ff; border:1px solid #e9d5ff; border-radius:6px;";
+            d.style.cssText = "margin-bottom:6px; padding:6px; background:#fbf8f4; border:1px solid #e6ded3; border-radius:6px;";
             d.innerHTML = `
-                <div style="font-weight:bold; font-size:11px; color:#4c1d95;">Role: "${r || 'Default'}"</div>
+                <div style="font-weight:bold; font-size:11px; color:#0f4c47;">Role: "${r || 'Default'}"</div>
                 <div style="margin-top:2px;">
-                    <label style="font-size:9px; color:#16a34a; font-weight:700;">1LOOK ROLE</label>
-                    <select class="w-map-1look" data-orig="${r}" style="width:100%; font-size:11px; padding:3px; border-radius:4px; border:1px solid #ddd6fe;">
+                    <label style="font-size:9px; color:#e87a47; font-weight:700;">1LOOK ROLE</label>
+                    <select class="w-map-1look" data-orig="${r}" style="width:100%; font-size:11px; padding:3px; border-radius:4px; border:1px solid #b3e2d8;">
                         ${CONFIG.roles1Look.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
                     </select>
                 </div>
@@ -362,7 +362,7 @@
         document.getElementById('w-progress-fill').style.width = `${percent}%`;
 
         if (total === 0) {
-            container.innerHTML = `<div style="text-align:center; padding:15px; color:#64748b;">No users in batch.</div>`;
+            container.innerHTML = `<div style="text-align:center; padding:15px; color:#5c6f6a;">No users in batch.</div>`;
             return;
         }
 
@@ -371,34 +371,34 @@
             const roleDisplay = u.branch ? `${u.role1Look || u.role || 'Sales Representative'} (${u.branch})` : (u.role1Look || u.role || 'Sales Representative');
 
             return `
-                <div style="background:${isDone ? '#f0fdf4' : '#ffffff'}; border:1px solid ${isDone ? '#bbf7d0' : '#e2e8f0'}; border-radius:10px; padding:10px; margin-bottom:8px;">
+                <div style="background:${isDone ? '#f0fdf4' : '#ffffff'}; border:1px solid ${isDone ? '#bbf7d0' : '#e6ded3'}; border-radius:10px; padding:10px; margin-bottom:8px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <b style="font-size:12px; color:${isDone ? '#166534' : '#1e1b4b'};">${i + 1}. ${u.firstName} ${u.lastName}</b>
-                        <button type="button" style="padding:3px 8px; border-radius:12px; font-size:10px; font-weight:700; border:1px solid ${isDone ? '#059669' : '#cbd5e1'}; background:${isDone ? '#10b981' : '#ffffff'}; color:${isDone ? '#ffffff' : '#64748b'}; cursor:pointer;" onclick="window.widgetToggleDone(${i})">
+                        <b style="font-size:12px; color:${isDone ? '#166534' : '#113a36'};">${i + 1}. ${u.firstName} ${u.lastName}</b>
+                        <button type="button" style="padding:3px 8px; border-radius:12px; font-size:10px; font-weight:700; border:1px solid ${isDone ? '#0f4c47' : '#d9d0c3'}; background:${isDone ? '#0d9488' : '#ffffff'}; color:${isDone ? '#ffffff' : '#4a5d58'}; cursor:pointer;" onclick="window.widgetToggleDone(${i})">
                             ${isDone ? '✓ Created' : '☐ Mark Done'}
                         </button>
                     </div>
 
                     <!-- CLICKABLE COPY FIELDS FOR EVERY FIELD -->
                     <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;">
-                        <span class="copy-field-chip" data-copy-val="${escapeHtml(u.firstName)}" data-copy-label="First Name" style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:3px 7px; border-radius:6px; font-size:10.5px; cursor:pointer;" onclick="window.widgetCopyText('${escapeHtml(u.firstName)}', 'First Name')">
-                            <span style="color:#64748b;">First:</span> <b style="margin-left:3px;">${u.firstName}</b> 📋
+                        <span class="copy-field-chip" data-copy-val="${escapeHtml(u.firstName)}" data-copy-label="First Name" style="display:inline-flex; align-items:center; background:#fbf8f4; border:1px solid #e6ded3; color:#113a36; padding:3px 7px; border-radius:6px; font-size:10.5px; cursor:pointer;" onclick="window.widgetCopyText('${escapeHtml(u.firstName)}', 'First Name')">
+                            <span style="color:#5c6f6a;">First:</span> <b style="margin-left:3px;">${u.firstName}</b> 📋
                         </span>
-                        <span class="copy-field-chip" data-copy-val="${escapeHtml(u.lastName)}" data-copy-label="Last Name" style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:3px 7px; border-radius:6px; font-size:10.5px; cursor:pointer;" onclick="window.widgetCopyText('${escapeHtml(u.lastName)}', 'Last Name')">
-                            <span style="color:#64748b;">Last:</span> <b style="margin-left:3px;">${u.lastName}</b> 📋
+                        <span class="copy-field-chip" data-copy-val="${escapeHtml(u.lastName)}" data-copy-label="Last Name" style="display:inline-flex; align-items:center; background:#fbf8f4; border:1px solid #e6ded3; color:#113a36; padding:3px 7px; border-radius:6px; font-size:10.5px; cursor:pointer;" onclick="window.widgetCopyText('${escapeHtml(u.lastName)}', 'Last Name')">
+                            <span style="color:#5c6f6a;">Last:</span> <b style="margin-left:3px;">${u.lastName}</b> 📋
                         </span>
-                        <span class="copy-field-chip" data-copy-val="${escapeHtml(u.email)}" data-copy-label="Email" style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:3px 7px; border-radius:6px; font-size:10.5px; cursor:pointer;" onclick="window.widgetCopyText('${escapeHtml(u.email)}', 'Email')">
-                            <span style="color:#64748b;">Email:</span> <b style="margin-left:3px;">${u.email || '-'}</b> 📋
+                        <span class="copy-field-chip" data-copy-val="${escapeHtml(u.email)}" data-copy-label="Email" style="display:inline-flex; align-items:center; background:#fbf8f4; border:1px solid #e6ded3; color:#113a36; padding:3px 7px; border-radius:6px; font-size:10.5px; cursor:pointer;" onclick="window.widgetCopyText('${escapeHtml(u.email)}', 'Email')">
+                            <span style="color:#5c6f6a;">Email:</span> <b style="margin-left:3px;">${u.email || '-'}</b> 📋
                         </span>
-                        <span class="copy-field-chip" data-copy-val="${escapeHtml(u.phone)}" data-copy-label="Phone" style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:3px 7px; border-radius:6px; font-size:10.5px; cursor:pointer;" onclick="window.widgetCopyText('${escapeHtml(u.phone)}', 'Phone')">
-                            <span style="color:#64748b;">Phone:</span> <b style="margin-left:3px;">${u.phone || '-'}</b> 📋
+                        <span class="copy-field-chip" data-copy-val="${escapeHtml(u.phone)}" data-copy-label="Phone" style="display:inline-flex; align-items:center; background:#fbf8f4; border:1px solid #e6ded3; color:#113a36; padding:3px 7px; border-radius:6px; font-size:10.5px; cursor:pointer;" onclick="window.widgetCopyText('${escapeHtml(u.phone)}', 'Phone')">
+                            <span style="color:#5c6f6a;">Phone:</span> <b style="margin-left:3px;">${u.phone || '-'}</b> 📋
                         </span>
-                        <span class="copy-field-chip" data-copy-val="${escapeHtml(roleDisplay)}" data-copy-label="Role" style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:3px 7px; border-radius:6px; font-size:10.5px; cursor:pointer;" onclick="window.widgetCopyText('${escapeHtml(roleDisplay)}', 'Role')">
-                            <span style="color:#16a34a;">Role:</span> <b style="margin-left:3px;">${roleDisplay}</b> 📋
+                        <span class="copy-field-chip" data-copy-val="${escapeHtml(roleDisplay)}" data-copy-label="Role" style="display:inline-flex; align-items:center; background:#eaf5f2; border:1px solid #b3e2d8; color:#0f4c47; padding:3px 7px; border-radius:6px; font-size:10.5px; cursor:pointer;" onclick="window.widgetCopyText('${escapeHtml(roleDisplay)}', 'Role')">
+                            <span style="color:#0d9488;">Role:</span> <b style="margin-left:3px;">${roleDisplay}</b> 📋
                         </span>
                     </div>
 
-                    <button type="button" style="width:100%; background:#16a34a; color:white; border:none; padding:6px; border-radius:6px; font-weight:700; font-size:11px; cursor:pointer;" onclick="window.widgetFillUser(${i})">
+                    <button type="button" style="width:100%; background:linear-gradient(135deg, #0f4c47, #0d9488); color:white; border:none; padding:6px; border-radius:6px; font-weight:700; font-size:11px; cursor:pointer;" onclick="window.widgetFillUser(${i})">
                         📝 FILL 1LOOK FORM NOW
                     </button>
                 </div>
