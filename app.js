@@ -62,6 +62,10 @@ function setupListeners() {
         };
     }
 
+    // Prevent browser default open-file behavior on window
+    window.addEventListener("dragover", (e) => e.preventDefault(), false);
+    window.addEventListener("drop", (e) => e.preventDefault(), false);
+
     // Drag & Drop File Handlers
     const dropZone = document.getElementById('drop-zone');
     const dropOverlay = document.getElementById('drop-overlay');
@@ -72,8 +76,8 @@ function setupListeners() {
             dropZone.addEventListener(eventName, (e) => {
                 e.preventDefault(); e.stopPropagation();
                 if (dropOverlay) dropOverlay.style.display = 'flex';
-                dropZone.style.borderColor = '#7c3aed';
-                dropZone.style.background = '#f3e8ff';
+                dropZone.style.borderColor = '#1e2838';
+                dropZone.style.background = '#f1f5f9';
             }, false);
         });
 
@@ -81,12 +85,14 @@ function setupListeners() {
             dropZone.addEventListener(eventName, (e) => {
                 e.preventDefault(); e.stopPropagation();
                 if (dropOverlay) dropOverlay.style.display = 'none';
-                dropZone.style.borderColor = '#ddd6fe';
-                dropZone.style.background = '#faf5ff';
+                dropZone.style.borderColor = '#cbd5e1';
+                dropZone.style.background = '#f8fafc';
             }, false);
         });
 
         dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            if (dropOverlay) dropOverlay.style.display = 'none';
             const dt = e.dataTransfer;
             if (dt && dt.files && dt.files.length > 0) {
                 handleFileDrop(dt.files[0]);
@@ -103,6 +109,17 @@ function setupListeners() {
     }
 }
 
+async function loadXlsxLibrary() {
+    if (typeof XLSX !== 'undefined') return true;
+    return new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.head.appendChild(script);
+    });
+}
+
 async function handleFileDrop(file) {
     if (!file) return;
     const name = file.name.toLowerCase();
@@ -110,15 +127,17 @@ async function handleFileDrop(file) {
 
     try {
         let tsvText = "";
-        if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
-            if (typeof XLSX === 'undefined') {
-                return showToast("⚠️ Excel parser loading. Please try again.", "error");
+        if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv') || name.endsWith('.tsv')) {
+            const loaded = await loadXlsxLibrary();
+            if (loaded && typeof XLSX !== 'undefined') {
+                const buffer = await file.arrayBuffer();
+                const workbook = XLSX.read(buffer, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                tsvText = XLSX.utils.sheet_to_csv(worksheet, { FS: '\t' });
+            } else {
+                tsvText = await file.text();
             }
-            const buffer = await file.arrayBuffer();
-            const workbook = XLSX.read(buffer, { type: 'array' });
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            tsvText = XLSX.utils.sheet_to_csv(worksheet, { FS: '\t' });
         } else {
             tsvText = await file.text();
         }
