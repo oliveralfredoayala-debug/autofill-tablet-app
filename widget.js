@@ -13,7 +13,8 @@
             fullName: ["full name", "fullname", "name", "nombre completo", "employee", "person", "user"],
             email: ["email", "e-mail", "mail", "correo"],
             phone: ["phone number", "phone", "mobile", "cell", "contact", "teléfono", "celular"],
-            role: ["role", "job", "title", "position", "permissions", "cargo", "puesto", "main branch", "branch", "location", "locations"]
+            role: ["role", "job", "title", "position", "permissions", "cargo", "puesto"],
+            branch: ["branch", "location", "locations", "office", "site", "sucursal", "oficina"]
         },
         roles1Look: ["Sales Representative", "Installer", "Sales Manager", "Finance Manager", "Admin", "User"]
     };

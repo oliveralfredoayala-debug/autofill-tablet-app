@@ -6,7 +6,8 @@ const CONFIG = {
         fullName: ["full name", "fullname", "name", "nombre completo", "employee", "person", "user"],
         email: ["email", "e-mail", "mail", "correo"],
         phone: ["phone number", "phone", "mobile", "cell", "contact", "teléfono", "celular"],
-        role: ["role", "job", "title", "position", "permissions", "cargo", "puesto", "main branch", "branch", "location", "locations"]
+        role: ["role", "job", "title", "position", "permissions", "cargo", "puesto"],
+        branch: ["branch", "location", "locations", "office", "site", "sucursal", "oficina"]
     },
     roles1Look: ["Sales Representative", "Installer", "Sales Manager", "Finance Manager", "Admin", "User"]
 };
@@ -340,18 +341,18 @@ function parseExcelTsvData(raw) {
     let hasHeaders = false;
 
     firstLineCols.forEach((col, idx) => {
-        if (CONFIG.keywords.firstName.some(w => col.includes(w) || col === w)) { mapping.firstName = idx; hasHeaders = true; }
-        else if (CONFIG.keywords.lastName.some(w => col.includes(w) || col === w)) { mapping.lastName = idx; hasHeaders = true; }
-        else if (CONFIG.keywords.fullName.some(w => col.includes(w) || col === w) && mapping.fullName === -1) { mapping.fullName = idx; hasHeaders = true; }
-        else if (CONFIG.keywords.email.some(w => col.includes(w) || col === w)) { mapping.email = idx; hasHeaders = true; }
-        else if (CONFIG.keywords.phone.some(w => col.includes(w) || col === w)) { mapping.phone = idx; hasHeaders = true; }
-        else if (CONFIG.keywords.role.some(w => col.includes(w) || col === w)) { mapping.role = idx; hasHeaders = true; }
+        if ((CONFIG.keywords.firstName || []).some(w => col.includes(w) || col === w)) { mapping.firstName = idx; hasHeaders = true; }
+        else if ((CONFIG.keywords.lastName || []).some(w => col.includes(w) || col === w)) { mapping.lastName = idx; hasHeaders = true; }
+        else if ((CONFIG.keywords.fullName || []).some(w => col.includes(w) || col === w) && mapping.fullName === -1) { mapping.fullName = idx; hasHeaders = true; }
+        else if ((CONFIG.keywords.email || []).some(w => col.includes(w) || col === w)) { mapping.email = idx; hasHeaders = true; }
+        else if ((CONFIG.keywords.phone || []).some(w => col.includes(w) || col === w)) { mapping.phone = idx; hasHeaders = true; }
+        else if ((CONFIG.keywords.role || []).some(w => col.includes(w) || col === w)) { mapping.role = idx; hasHeaders = true; }
     });
 
     const branchIndices = [];
     firstLineCols.forEach((col, idx) => {
         if (col.includes('manager')) return;
-        if (CONFIG.keywords.branch.some(w => col.includes(w) || col === w)) branchIndices.push(idx);
+        if ((CONFIG.keywords.branch || []).some(w => col.includes(w) || col === w)) branchIndices.push(idx);
     });
 
     const dataRows = hasHeaders ? lines.slice(1) : lines;
