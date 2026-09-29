@@ -137,38 +137,62 @@ function cleanPhone(raw) {
     return "555-555-5555";
 }
 
-function copyText(text, label = "") {
+window.copyText = function(text, label = "") {
     if (!text || text === '-' || text === 'N/A') {
         showToast("⚠️ Field is empty", "error");
         return;
     }
     const cleanStr = String(text).trim();
-    navigator.clipboard.writeText(cleanStr).then(() => {
-        showToast(`📋 Copied ${label}: "${cleanStr}"`, "success");
-    }).catch(err => {
-        try {
-            const ta = document.createElement('textarea');
-            ta.value = cleanStr;
-            ta.style.position = 'fixed';
-            ta.style.opacity = '0';
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            document.body.removeChild(ta);
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(cleanStr).then(() => {
             showToast(`📋 Copied ${label}: "${cleanStr}"`, "success");
-        } catch (e) {
-            showToast(`❌ Copy failed: ${e.message}`, "error");
+        }).catch(() => fallbackCopyText(cleanStr, label));
+    } else {
+        fallbackCopyText(cleanStr, label);
+    }
+};
+
+function fallbackCopyText(cleanStr, label) {
+    try {
+        const ta = document.createElement('textarea');
+        ta.value = cleanStr;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (successful) {
+            showToast(`📋 Copied ${label}: "${cleanStr}"`, "success");
+        } else {
+            showToast(`❌ Copy failed`, "error");
         }
-    });
+    } catch (e) {
+        showToast(`❌ Copy failed: ${e.message}`, "error");
+    }
 }
 
-function copyUserRow(idx) {
+window.copyUserRow = function(idx) {
     if (idx >= state.users.length) return;
     const u = state.users[idx];
     const roleDisplay = u.branch ? `${u.role1Look || u.role || 'Sales Representative'} (${u.branch})` : (u.role1Look || u.role || 'Sales Representative');
     const row = [u.firstName, u.lastName, u.email, u.phone, roleDisplay].join('\t');
-    copyText(row, `Row for ${u.firstName}`);
-}
+    window.copyText(row, `Row for ${u.firstName}`);
+};
+
+document.addEventListener('click', (e) => {
+    const chip = e.target.closest('.copy-field-chip');
+    if (chip) {
+        const val = chip.getAttribute('data-copy-val');
+        const label = chip.getAttribute('data-copy-label') || 'Field';
+        if (val) {
+            window.copyText(val, label);
+        }
+    }
+});
 
 function escapeHtml(str) {
     if (!str) return '';
@@ -512,19 +536,19 @@ function renderQueue() {
 
                 <!-- CLICKABLE COPY CHIPS FOR EVERY FIELD -->
                 <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px;">
-                    <span style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="copyText('${escapeHtml(u.firstName)}', 'First Name')">
+                    <span class="copy-field-chip" data-copy-val="${escapeHtml(u.firstName)}" data-copy-label="First Name" style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="window.copyText('${escapeHtml(u.firstName)}', 'First Name')">
                         <span style="color:#64748b;">First:</span> <b style="margin-left:3px;">${u.firstName}</b> 📋
                     </span>
-                    <span style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="copyText('${escapeHtml(u.lastName)}', 'Last Name')">
+                    <span class="copy-field-chip" data-copy-val="${escapeHtml(u.lastName)}" data-copy-label="Last Name" style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="window.copyText('${escapeHtml(u.lastName)}', 'Last Name')">
                         <span style="color:#64748b;">Last:</span> <b style="margin-left:3px;">${u.lastName}</b> 📋
                     </span>
-                    <span style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="copyText('${escapeHtml(u.email)}', 'Email')">
+                    <span class="copy-field-chip" data-copy-val="${escapeHtml(u.email)}" data-copy-label="Email" style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="window.copyText('${escapeHtml(u.email)}', 'Email')">
                         <span style="color:#64748b;">Email:</span> <b style="margin-left:3px;">${u.email || '-'}</b> 📋
                     </span>
-                    <span style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="copyText('${escapeHtml(u.phone)}', 'Phone')">
+                    <span class="copy-field-chip" data-copy-val="${escapeHtml(u.phone)}" data-copy-label="Phone" style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="window.copyText('${escapeHtml(u.phone)}', 'Phone')">
                         <span style="color:#64748b;">Phone:</span> <b style="margin-left:3px;">${u.phone || '-'}</b> 📋
                     </span>
-                    <span style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="copyText('${escapeHtml(roleDisplay)}', 'Role')">
+                    <span class="copy-field-chip" data-copy-val="${escapeHtml(roleDisplay)}" data-copy-label="Role" style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="window.copyText('${escapeHtml(roleDisplay)}', 'Role')">
                         <span style="color:#16a34a;">Role:</span> <b style="margin-left:3px;">${roleDisplay}</b> 📋
                     </span>
                 </div>
