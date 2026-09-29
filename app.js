@@ -47,6 +47,21 @@ function setupListeners() {
     };
     document.getElementById('btn-apply-config').onclick = applyConfigAndStart;
 
+    const prevBtn = document.getElementById('btn-prev-user');
+    if (prevBtn) prevBtn.onclick = prevUser;
+
+    const nextBtn = document.getElementById('btn-next-user');
+    if (nextBtn) nextBtn.onclick = nextUser;
+
+    const dropdown = document.getElementById('user-select-dropdown');
+    if (dropdown) {
+        dropdown.onchange = (e) => {
+            state.currentIndex = parseInt(e.target.value, 10) || 0;
+            saveState();
+            renderQueue();
+        };
+    }
+
     // Drag & Drop File Handlers
     const dropZone = document.getElementById('drop-zone');
     const dropOverlay = document.getElementById('drop-overlay');
@@ -184,12 +199,26 @@ window.copyUserRow = function(idx) {
 };
 
 document.addEventListener('click', (e) => {
-    const chip = e.target.closest('.copy-field-chip');
+    const chip = e.target.closest('.copy-field-box, .copy-field-chip');
     if (chip) {
         const val = chip.getAttribute('data-copy-val');
         const label = chip.getAttribute('data-copy-label') || 'Field';
         if (val) {
             window.copyText(val, label);
+        }
+        return;
+    }
+
+    const actionBtn = e.target.closest('[data-action]');
+    if (actionBtn) {
+        const action = actionBtn.getAttribute('data-action');
+        const idx = parseInt(actionBtn.getAttribute('data-idx'), 10);
+        if (action === 'fill-1look') {
+            triggerFillUser(idx);
+        } else if (action === 'toggle-complete') {
+            toggleUserComplete(idx);
+        } else if (action === 'copy-row') {
+            copyUserRow(idx);
         }
     }
 });
@@ -493,8 +522,8 @@ function applyConfigAndStart() {
 }
 
 function renderQueue() {
-    const listContainer = document.getElementById('full-user-list');
-    if (!listContainer) return;
+    const singleContainer = document.getElementById('single-user-view-container');
+    if (!singleContainer) return;
 
     const total = state.users.length;
     const completedCount = state.users.filter(u => u.completed).length;
@@ -509,56 +538,84 @@ function renderQueue() {
     const progressFill = document.getElementById('progress-fill');
     if (progressFill) progressFill.style.width = `${percent}%`;
 
-    const listCount = document.getElementById('user-list-count');
-    if (listCount) listCount.innerText = `${completedCount}/${total} Completed`;
+    const dropdown = document.getElementById('user-select-dropdown');
+    if (dropdown) {
+        dropdown.innerHTML = state.users.map((u, i) => `
+            <option value="${i}" ${i === state.currentIndex ? 'selected' : ''}>
+                ${u.completed ? '✓ ' : ''}${i + 1}. ${u.firstName} ${u.lastName}
+            </option>
+        `).join('');
+    }
 
     if (total === 0) {
-        listContainer.innerHTML = `<div style="text-align:center; padding:20px; color:#64748b;">No users in batch.</div>`;
+        singleContainer.innerHTML = `<div style="text-align:center; padding:30px; color:#64748b; font-weight:700;">No users in batch.</div>`;
         return;
     }
 
-    listContainer.innerHTML = state.users.map((u, i) => {
-        const isCompleted = !!u.completed;
+    if (state.currentIndex >= total) state.currentIndex = total - 1;
+    if (state.currentIndex < 0) state.currentIndex = 0;
 
-        let cardClass = "user-card-item";
-        if (isCompleted) cardClass += " completed-user";
+    const i = state.currentIndex;
+    const u = state.users[i];
+    const isCompleted = !!u.completed;
 
-        const roleDisplay = u.branch ? `${u.role1Look || u.role || 'Sales Representative'} (${u.branch})` : (u.role1Look || u.role || 'Sales Representative');
+    const roleDisplay = u.branch ? `${u.role1Look || u.role || 'Sales Representative'} (${u.branch})` : (u.role1Look || u.role || 'Sales Representative');
 
-        return `
-            <div class="${cardClass}">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <span style="font-size:14px; font-weight:700; color:#1e1b4b;">${i + 1}. ${u.firstName} ${u.lastName}</span>
-                    <button type="button" class="btn-check-toggle ${isCompleted ? 'completed' : ''}" onclick="toggleUserComplete(${i})">
-                        ${isCompleted ? '✓ Created' : '☐ Mark Done'}
-                    </button>
+    singleContainer.innerHTML = `
+        <div class="focused-user-card ${isCompleted ? 'completed' : ''}">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; padding-bottom:10px; border-bottom:1.5px solid ${isCompleted ? '#bbf7d0' : '#e9d5ff'};">
+                <div>
+                    <div style="font-size:11px; color:#7c3aed; font-weight:800; text-transform:uppercase; margin-bottom:2px;">
+                        USER ${i + 1} OF ${total}
+                    </div>
+                    <div style="font-size:18px; font-weight:800; color:${isCompleted ? '#166534' : '#1e1b4b'};">
+                        ${u.firstName} ${u.lastName}
+                    </div>
                 </div>
-
-                <!-- CLICKABLE COPY CHIPS FOR EVERY FIELD -->
-                <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px;">
-                    <span class="copy-field-chip" data-copy-val="${escapeHtml(u.firstName)}" data-copy-label="First Name" style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="window.copyText('${escapeHtml(u.firstName)}', 'First Name')">
-                        <span style="color:#64748b;">First:</span> <b style="margin-left:3px;">${u.firstName}</b> 📋
-                    </span>
-                    <span class="copy-field-chip" data-copy-val="${escapeHtml(u.lastName)}" data-copy-label="Last Name" style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="window.copyText('${escapeHtml(u.lastName)}', 'Last Name')">
-                        <span style="color:#64748b;">Last:</span> <b style="margin-left:3px;">${u.lastName}</b> 📋
-                    </span>
-                    <span class="copy-field-chip" data-copy-val="${escapeHtml(u.email)}" data-copy-label="Email" style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="window.copyText('${escapeHtml(u.email)}', 'Email')">
-                        <span style="color:#64748b;">Email:</span> <b style="margin-left:3px;">${u.email || '-'}</b> 📋
-                    </span>
-                    <span class="copy-field-chip" data-copy-val="${escapeHtml(u.phone)}" data-copy-label="Phone" style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="window.copyText('${escapeHtml(u.phone)}', 'Phone')">
-                        <span style="color:#64748b;">Phone:</span> <b style="margin-left:3px;">${u.phone || '-'}</b> 📋
-                    </span>
-                    <span class="copy-field-chip" data-copy-val="${escapeHtml(roleDisplay)}" data-copy-label="Role" style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="window.copyText('${escapeHtml(roleDisplay)}', 'Role')">
-                        <span style="color:#16a34a;">Role:</span> <b style="margin-left:3px;">${roleDisplay}</b> 📋
-                    </span>
-                </div>
-
-                <button type="button" class="btn-secondary" style="width:100%; font-size:11px; padding:6px;" onclick="copyUserRow(${i})">
-                    📋 Copy Row (TSV)
+                <button type="button" class="btn-check-toggle ${isCompleted ? 'completed' : ''}" data-action="toggle-complete" data-idx="${i}">
+                    ${isCompleted ? '✓ Created' : '☐ Mark Done'}
                 </button>
             </div>
-        `;
-    }).join('');
+
+            <div style="margin-bottom:16px;">
+                <div style="font-size:11px; color:#64748b; font-weight:800; text-transform:uppercase; margin-bottom:8px;">💡 TAP ANY FIELD BELOW TO COPY</div>
+
+                <div class="copy-field-box" data-copy-val="${escapeHtml(u.firstName)}" data-copy-label="First Name">
+                    <span style="color:#64748b; font-weight:700;">First Name:</span>
+                    <span style="font-weight:800; color:#1e1b4b; font-size:14px;">${u.firstName} 📋</span>
+                </div>
+
+                <div class="copy-field-box" data-copy-val="${escapeHtml(u.lastName)}" data-copy-label="Last Name">
+                    <span style="color:#64748b; font-weight:700;">Last Name:</span>
+                    <span style="font-weight:800; color:#1e1b4b; font-size:14px;">${u.lastName} 📋</span>
+                </div>
+
+                <div class="copy-field-box" data-copy-val="${escapeHtml(u.email)}" data-copy-label="Email">
+                    <span style="color:#64748b; font-weight:700;">Email:</span>
+                    <span style="font-weight:800; color:#1e1b4b; font-size:13px;">${u.email || '-'} 📋</span>
+                </div>
+
+                <div class="copy-field-box" data-copy-val="${escapeHtml(u.phone)}" data-copy-label="Phone">
+                    <span style="color:#64748b; font-weight:700;">Mobile Phone:</span>
+                    <span style="font-weight:800; color:#1e1b4b; font-size:13px;">${u.phone || '-'} 📋</span>
+                </div>
+
+                <div class="copy-field-box" data-copy-val="${escapeHtml(roleDisplay)}" data-copy-label="Role" style="background:#f0fdf4; border-color:#bbf7d0;">
+                    <span style="color:#15803d; font-weight:700;">Role:</span>
+                    <span style="font-weight:800; color:#166534; font-size:13px;">${roleDisplay} 📋</span>
+                </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <button type="button" class="btn-primary" style="background:#16a34a; font-size:13px; padding:12px;" data-action="fill-1look" data-idx="${i}">
+                    📝 FILL 1LOOK FORM NOW
+                </button>
+                <button type="button" class="btn-secondary" style="padding:10px; font-size:12px;" data-action="copy-row" data-idx="${i}">
+                    📋 Copy Full Row (TSV)
+                </button>
+            </div>
+        </div>
+    `;
 }
 
 window.toggleUserComplete = function(idx) {
@@ -568,6 +625,37 @@ window.toggleUserComplete = function(idx) {
         renderQueue();
     }
 };
+
+window.triggerFillUser = function(idx) {
+    if (idx >= state.users.length) return;
+    state.currentIndex = idx;
+    saveState();
+    renderQueue();
+
+    const u = state.users[idx];
+    copyUserRow(idx);
+    showToast(`📋 Copied row for ${u.firstName}! Switch to 1LOOK form & paste.`, "success");
+};
+
+function nextUser() {
+    if (state.currentIndex < state.users.length - 1) {
+        state.currentIndex++;
+    } else {
+        state.currentIndex = 0;
+    }
+    saveState();
+    renderQueue();
+}
+
+function prevUser() {
+    if (state.currentIndex > 0) {
+        state.currentIndex--;
+    } else {
+        state.currentIndex = state.users.length - 1;
+    }
+    saveState();
+    renderQueue();
+}
 
 function setupBookmarklet() {
     const origin = window.location.origin;
