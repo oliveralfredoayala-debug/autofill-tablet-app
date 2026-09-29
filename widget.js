@@ -348,34 +348,68 @@
 
         function setInput(keywords, val, isEmail = false) {
             if (!val) return;
+            const allInputs = Array.from(document.querySelectorAll('input'));
+            if (allInputs.length === 0) return;
+
+            let inputs = allInputs.filter(e => e.type !== 'hidden' && getComputedStyle(e).display !== 'none' && getComputedStyle(e).visibility !== 'hidden');
+            if (inputs.length === 0) inputs = allInputs;
+
             let input = null;
+
             if (isEmail) {
-                input = Array.from(document.querySelectorAll('input')).find(e =>
-                    (e.type === "email" || (e.name || '').toLowerCase().includes("email") || (e.placeholder || '').toLowerCase().includes("email")) && e.offsetParent !== null
+                input = inputs.find(e => 
+                    e.type === "email" || 
+                    (e.name || "").toLowerCase().includes("email") || 
+                    (e.placeholder || "").toLowerCase().includes("email") ||
+                    (e.id || "").toLowerCase().includes("email")
                 );
             }
+
             if (!input) {
-                input = Array.from(document.querySelectorAll('input')).find(e => {
+                input = inputs.find(e => {
                     const ph = (e.placeholder || "").toLowerCase();
                     const name = (e.name || "").toLowerCase();
                     const id = (e.id || "").toLowerCase();
-                    return keywords.some(k => ph.includes(k) || name.includes(k) || id.includes(k)) && e.offsetParent !== null;
+                    const aria = (e.getAttribute('aria-label') || "").toLowerCase();
+                    return keywords.some(k => ph.includes(k) || name.includes(k) || id.includes(k) || aria.includes(k));
                 });
             }
+
+            if (!input) {
+                const labels = Array.from(document.querySelectorAll('label, div, span, p, th, td')).filter(e => {
+                    const txt = (e.innerText || "").trim().toLowerCase();
+                    return keywords.some(k => txt === k || txt.startsWith(k)) && e.children.length === 0;
+                });
+
+                for (const label of labels) {
+                    if (label.htmlFor) {
+                        input = document.getElementById(label.htmlFor);
+                        if (input) break;
+                    }
+                    const parent = label.closest('div, section, td, tr, form, fieldset');
+                    if (parent) {
+                        input = parent.querySelector('input');
+                        if (input) break;
+                    }
+                }
+            }
+
             if (input) {
                 input.focus();
                 input.click();
                 const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
                 if (nativeSetter) nativeSetter.call(input, val);
                 else input.value = val;
-                ['input', 'change', 'blur'].forEach(evt => input.dispatchEvent(new Event(evt, { bubbles: true })));
+                ['focus', 'keydown', 'keypress', 'input', 'change', 'keyup', 'blur'].forEach(evt => 
+                    input.dispatchEvent(new Event(evt, { bubbles: true, cancelable: true }))
+                );
             }
         }
 
-        setInput(["first name", "firstname", "first"], u.firstName);
-        setInput(["last name", "lastname", "last"], u.lastName);
-        setInput(["email", "mail"], u.email, true);
-        setInput(["phone", "mobile", "cell"], u.phone);
+        setInput(["first name", "firstname", "first", "primer nombre"], u.firstName);
+        setInput(["last name", "lastname", "last", "apellido"], u.lastName);
+        setInput(["email", "mail", "correo"], u.email, true);
+        setInput(["phone", "mobile", "cell", "teléfono"], u.phone);
 
         toast(`✅ Form Filled for ${u.firstName}!`, 'success');
     }
