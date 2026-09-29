@@ -672,7 +672,7 @@ function showToast(msg, type = 'info') {
     const t = document.getElementById('panel-toast');
     if (t) {
         t.innerText = msg;
-        t.style.background = type === 'error' ? '#ef4444' : (type === 'success' ? '#10b981' : '#7c3aed');
+        t.style.background = type === 'error' ? '#ef4444' : (type === 'success' ? '#10b981' : '#1e2838');
         t.style.opacity = '1';
         setTimeout(() => { t.style.opacity = '0'; }, 3000);
     }

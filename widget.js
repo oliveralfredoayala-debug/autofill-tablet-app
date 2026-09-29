@@ -56,12 +56,12 @@
     `;
 
     widget.innerHTML = `
-        <div id="widget-header" style="background: linear-gradient(135deg, #eaf5f2 0%, #d4ede7 100%); border-bottom: 1px solid #b3e2d8; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: move; user-select: none;">
-            <div style="font-weight: 800; color: #0f4c47; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-                ⚡ 1Look Auto-Fill Widget
+        <div id="widget-header" style="background: #1e2838; border-bottom: 1px solid #334155; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: move; user-select: none;">
+            <div style="font-weight: 800; color: #f5c542; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                ⚡ User Manage-inator Widget
             </div>
             <div style="display: flex; gap: 6px;">
-                <button type="button" id="btn-widget-reset" style="background:#ffffff; border:1px solid #d9d0c3; color:#4a5d58; padding:3px 9px; border-radius:15px; font-size:10px; cursor:pointer; font-weight:700;">🔄 Reset</button>
+                <button type="button" id="btn-widget-reset" style="background:#ffffff; border:1px solid #cbd5e1; color:#475569; padding:3px 9px; border-radius:15px; font-size:10px; cursor:pointer; font-weight:700;">🔄 Reset</button>
                 <button type="button" id="btn-widget-close" style="background:#fee2e2; border:1px solid #fca5a5; color:#dc2626; padding:3px 9px; border-radius:15px; font-size:11px; cursor:pointer; font-weight:bold;">✖</button>
             </div>
         </div>

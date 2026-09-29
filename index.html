@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1Look Tablet Auto-Fill</title>
+    <title>User Manage-inator</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -17,36 +17,34 @@
             margin: 0;
             padding: 0;
             font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f8f3ec;
-            color: #113a36;
+            background: #f4f6f9;
+            color: #0f172a;
             font-size: 13px;
             line-height: 1.5;
         }
 
         .header-bar {
             background: #ffffff;
-            border-bottom: 1px solid #e6ded3;
+            border-bottom: 1px solid #e2e8f0;
             padding: 14px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(15, 76, 71, 0.04);
+            box-shadow: 0 2px 10px rgba(30, 40, 56, 0.04);
         }
 
         .header-bar h1 {
             margin: 0;
             font-size: 17px;
             font-weight: 800;
-            background: linear-gradient(135deg, #0f4c47 0%, #0d9488 55%, #e87a47 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #1e2838;
             letter-spacing: -0.02em;
         }
 
         .btn-reset-top {
-            background: #f1ede6;
-            border: 1px solid #d9d0c3;
-            color: #4a5d58;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #475569;
             padding: 6px 14px;
             border-radius: 20px;
             font-size: 12px;
@@ -69,23 +67,23 @@
 
         .subtitle {
             font-size: 12px;
-            color: #5c6f6a;
+            color: #64748b;
             margin-bottom: 14px;
         }
 
         .card {
             background: #ffffff;
             border-radius: 16px;
-            border: 1px solid #e6ded3;
+            border: 1px solid #e2e8f0;
             padding: 16px;
             margin-bottom: 14px;
-            box-shadow: 0 4px 16px rgba(15, 76, 71, 0.04);
+            box-shadow: 0 4px 18px rgba(30, 40, 56, 0.05);
         }
 
         label.field-label {
             display: block;
             font-size: 11px;
-            color: #0f4c47;
+            color: #1e2838;
             margin-bottom: 6px;
             font-weight: 800;
             letter-spacing: 0.05em;
@@ -97,9 +95,9 @@
         select {
             width: 100%;
             padding: 10px 14px;
-            background: #fbf8f4;
-            border: 1.5px solid #e6ded3;
-            color: #113a36;
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
+            color: #0f172a;
             border-radius: 10px;
             font-family: inherit;
             font-size: 13px;
@@ -110,9 +108,9 @@
         input[type="text"]:focus,
         select:focus {
             outline: none;
-            border-color: #0f4c47;
+            border-color: #f5c542;
             background: #ffffff;
-            box-shadow: 0 0 0 3px rgba(15, 76, 71, 0.12);
+            box-shadow: 0 0 0 3px rgba(245, 197, 66, 0.25);
         }
 
         textarea {
@@ -123,27 +121,27 @@
         .btn-primary {
             width: 100%;
             padding: 12px 18px;
-            background: linear-gradient(135deg, #0f4c47 0%, #0d9488 65%, #e87a47 100%);
-            color: #ffffff;
+            background: #f5c542;
+            color: #1e2838;
             border: none;
             border-radius: 12px;
             cursor: pointer;
-            font-weight: 700;
+            font-weight: 800;
             font-size: 13px;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 14px rgba(15, 76, 71, 0.2);
+            box-shadow: 0 4px 14px rgba(245, 197, 66, 0.35);
             touch-action: manipulation;
         }
 
         .btn-primary:hover {
-            opacity: 0.95;
+            background: #ebd134;
             transform: translateY(-1px);
         }
 
         .btn-secondary {
-            background: #eaf5f2;
-            border: 1.5px solid #b3e2d8;
-            color: #0f4c47;
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            color: #1e2838;
             padding: 10px 16px;
             border-radius: 12px;
             font-size: 12px;
@@ -153,9 +151,14 @@
             touch-action: manipulation;
         }
 
+        .btn-secondary:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
         .bookmarklet-box {
-            background: #fbf8f4;
-            border: 1.5px dashed #b3e2d8;
+            background: #f8fafc;
+            border: 1.5px dashed #cbd5e1;
             border-radius: 14px;
             padding: 16px;
             text-align: center;
@@ -164,22 +167,22 @@
 
         .bookmarklet-btn {
             display: inline-block;
-            background: linear-gradient(135deg, #0f4c47, #0d9488);
-            color: white;
-            font-weight: 700;
+            background: #1e2838;
+            color: #f5c542;
+            font-weight: 800;
             padding: 10px 18px;
             border-radius: 20px;
             text-decoration: none;
-            box-shadow: 0 4px 12px rgba(15, 76, 71, 0.25);
+            box-shadow: 0 4px 12px rgba(30, 40, 56, 0.25);
             margin-top: 8px;
         }
 
         .focused-user-card {
             background: #ffffff;
-            border: 2px solid #b3e2d8;
+            border: 2px solid #e2e8f0;
             border-radius: 18px;
             padding: 18px;
-            box-shadow: 0 8px 24px rgba(15, 76, 71, 0.08);
+            box-shadow: 0 8px 24px rgba(30, 40, 56, 0.08);
             margin-bottom: 14px;
         }
 
@@ -193,23 +196,23 @@
             border-radius: 20px;
             font-size: 12px;
             font-weight: 700;
-            border: 1.5px solid #d9d0c3;
+            border: 1.5px solid #cbd5e1;
             background: #ffffff;
-            color: #4a5d58;
+            color: #475569;
             cursor: pointer;
             transition: all 0.2s ease;
         }
 
         .btn-check-toggle.completed {
-            background: #0d9488;
-            color: #ffffff;
-            border-color: #0f4c47;
-            box-shadow: 0 3px 10px rgba(13, 148, 136, 0.25);
+            background: #f5c542;
+            color: #1e2838;
+            border-color: #e5b412;
+            box-shadow: 0 3px 10px rgba(245, 197, 66, 0.35);
         }
 
         .copy-field-box {
-            background: #fbf8f4;
-            border: 1.5px solid #e6ded3;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
             border-radius: 12px;
             padding: 10px 14px;
             margin-bottom: 10px;
@@ -223,18 +226,18 @@
         }
 
         .copy-field-box:hover, .copy-field-box:active {
-            background: #0f4c47;
+            background: #1e2838;
             color: #ffffff;
-            border-color: #0f4c47;
+            border-color: #1e2838;
         }
 
         .copy-field-box:hover span {
-            color: #ffffff !important;
+            color: #f5c542 !important;
         }
 
         .progress-bar-bg {
             height: 7px;
-            background: #e6ded3;
+            background: #e2e8f0;
             border-radius: 10px;
             overflow: hidden;
             margin-top: 6px;
@@ -242,7 +245,7 @@
 
         .progress-bar-fill {
             height: 100%;
-            background: linear-gradient(90deg, #0d9488, #e87a47);
+            background: linear-gradient(90deg, #1e2838 0%, #f5c542 100%);
             width: 0%;
             transition: width 0.3s ease;
         }
@@ -262,7 +265,7 @@
             font-weight: 700;
             z-index: 9999;
             color: white;
-            box-shadow: 0 8px 24px rgba(15, 76, 71, 0.3);
+            box-shadow: 0 8px 24px rgba(30, 40, 56, 0.3);
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.2s ease;
@@ -272,16 +275,16 @@
 
 <body>
     <div class="header-bar">
-        <h1>⚡ 1Look Tablet Auto-Fill</h1>
+        <h1>⚡ User Manage-inator</h1>
         <button type="button" class="btn-reset-top btn-global-reset">🔄 Reset</button>
     </div>
 
     <div class="container">
         <!-- BOOKMARKLET INSTRUCTIONS FOR TABLET -->
         <div class="bookmarklet-box">
-            <div style="font-weight:700; color:#5b21b6; font-size:13px; margin-bottom:4px;">📌 TABLET WIDGET BOOKMARKLET</div>
+            <div style="font-weight:800; color:#1e2838; font-size:13px; margin-bottom:4px;">📌 TABLET WIDGET BOOKMARKLET</div>
             <div style="font-size:11px; color:#64748b; margin-bottom:8px;">Drag this button to your Browser Bookmarks bar or copy the link:</div>
-            <a id="bookmarklet-link" class="bookmarklet-btn" href="javascript:void(0)">⚡ Open 1Look Widget</a>
+            <a id="bookmarklet-link" class="bookmarklet-btn" href="javascript:void(0)">⚡ Open User Manage-inator Widget</a>
         </div>
 
         <!-- STEP 1: PARSER -->
