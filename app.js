@@ -6,8 +6,7 @@ const CONFIG = {
         fullName: ["full name", "fullname", "name", "nombre completo", "employee", "person", "user"],
         email: ["email", "e-mail", "mail", "correo"],
         phone: ["phone number", "phone", "mobile", "cell", "contact", "teléfono", "celular"],
-        role: ["role", "job", "title", "position", "permissions", "cargo", "puesto"],
-        branch: ["main branch", "branch", "location", "office", "site", "city", "county", "town", "territory", "area", "locations"]
+        role: ["role", "job", "title", "position", "permissions", "cargo", "puesto", "main branch", "branch", "location", "locations"]
     },
     roles1Look: ["Sales Representative", "Installer", "Sales Manager", "Finance Manager", "Admin", "User"]
 };
@@ -136,6 +135,44 @@ function cleanPhone(raw) {
         return str;
     }
     return "555-555-5555";
+}
+
+function copyText(text, label = "") {
+    if (!text || text === '-' || text === 'N/A') {
+        showToast("⚠️ Field is empty", "error");
+        return;
+    }
+    const cleanStr = String(text).trim();
+    navigator.clipboard.writeText(cleanStr).then(() => {
+        showToast(`📋 Copied ${label}: "${cleanStr}"`, "success");
+    }).catch(err => {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = cleanStr;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast(`📋 Copied ${label}: "${cleanStr}"`, "success");
+        } catch (e) {
+            showToast(`❌ Copy failed: ${e.message}`, "error");
+        }
+    });
+}
+
+function copyUserRow(idx) {
+    if (idx >= state.users.length) return;
+    const u = state.users[idx];
+    const roleDisplay = u.branch ? `${u.role1Look || u.role || 'Sales Representative'} (${u.branch})` : (u.role1Look || u.role || 'Sales Representative');
+    const row = [u.firstName, u.lastName, u.email, u.phone, roleDisplay].join('\t');
+    copyText(row, `Row for ${u.firstName}`);
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
 function saveState() {
@@ -371,13 +408,16 @@ function renderConfigUI() {
 
     const previewBox = document.getElementById('parsed-users-preview');
     if (previewBox) {
-        previewBox.innerHTML = state.users.map((u, i) => `
-            <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:10px; padding:8px 10px; margin-bottom:6px;">
-                <b style="color:#2e1065;">${i + 1}. ${u.firstName} ${u.lastName}</b>
-                <div style="color:#64748b; font-size:11px; margin-top:2px;">📧 ${u.email || 'No email'} | 📱 ${u.phone || 'No phone'}</div>
-                <div style="color:#6d28d9; font-weight:600; font-size:11px; margin-top:2px;">💼 Role: ${u.role || 'Not specified'} | 🏢 Location: ${u.branch || 'None'}</div>
-            </div>
-        `).join('');
+        previewBox.innerHTML = state.users.map((u, i) => {
+            const roleDisplay = u.branch ? `${u.role || 'Sales Rep'} (${u.branch})` : (u.role || 'Sales Rep');
+            return `
+                <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:10px; padding:8px 10px; margin-bottom:6px;">
+                    <b style="color:#2e1065;">${i + 1}. ${u.firstName} ${u.lastName}</b>
+                    <div style="color:#64748b; font-size:11px; margin-top:2px;">📧 ${u.email || 'No email'} | 📱 ${u.phone || 'No phone'}</div>
+                    <div style="color:#6d28d9; font-weight:600; font-size:11px; margin-top:2px;">💼 Role: ${roleDisplay}</div>
+                </div>
+            `;
+        }).join('');
     }
 
     const list = document.getElementById('mapping-list');
@@ -459,20 +499,39 @@ function renderQueue() {
         let cardClass = "user-card-item";
         if (isCompleted) cardClass += " completed-user";
 
+        const roleDisplay = u.branch ? `${u.role1Look || u.role || 'Sales Representative'} (${u.branch})` : (u.role1Look || u.role || 'Sales Representative');
+
         return `
             <div class="${cardClass}">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <span style="font-size:14px; font-weight:700; color:#1e1b4b;">${i + 1}. ${u.firstName} ${u.lastName}</span>
                     <button type="button" class="btn-check-toggle ${isCompleted ? 'completed' : ''}" onclick="toggleUserComplete(${i})">
                         ${isCompleted ? '✓ Created' : '☐ Mark Done'}
                     </button>
                 </div>
-                <div style="font-size:12px; color:#475569; display:grid; grid-template-columns:1fr 1fr; gap:4px;">
-                    <div>📧 ${u.email || '-'}</div>
-                    <div>📱 ${u.phone || '-'}</div>
-                    <div style="grid-column: span 2; color:#16a34a; font-weight:700;">🟢 Role: ${u.role1Look || 'Sales Representative'}</div>
-                    ${u.branch ? `<div style="grid-column: span 2; color:#6d28d9; font-weight:600;">🏢 Location: ${u.branch}</div>` : ''}
+
+                <!-- CLICKABLE COPY CHIPS FOR EVERY FIELD -->
+                <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px;">
+                    <span style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="copyText('${escapeHtml(u.firstName)}', 'First Name')">
+                        <span style="color:#64748b;">First:</span> <b style="margin-left:3px;">${u.firstName}</b> 📋
+                    </span>
+                    <span style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="copyText('${escapeHtml(u.lastName)}', 'Last Name')">
+                        <span style="color:#64748b;">Last:</span> <b style="margin-left:3px;">${u.lastName}</b> 📋
+                    </span>
+                    <span style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="copyText('${escapeHtml(u.email)}', 'Email')">
+                        <span style="color:#64748b;">Email:</span> <b style="margin-left:3px;">${u.email || '-'}</b> 📋
+                    </span>
+                    <span style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="copyText('${escapeHtml(u.phone)}', 'Phone')">
+                        <span style="color:#64748b;">Phone:</span> <b style="margin-left:3px;">${u.phone || '-'}</b> 📋
+                    </span>
+                    <span style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:4px 8px; border-radius:8px; font-size:11px; cursor:pointer;" onclick="copyText('${escapeHtml(roleDisplay)}', 'Role')">
+                        <span style="color:#16a34a;">Role:</span> <b style="margin-left:3px;">${roleDisplay}</b> 📋
+                    </span>
                 </div>
+
+                <button type="button" class="btn-secondary" style="width:100%; font-size:11px; padding:6px;" onclick="copyUserRow(${i})">
+                    📋 Copy Row (TSV)
+                </button>
             </div>
         `;
     }).join('');

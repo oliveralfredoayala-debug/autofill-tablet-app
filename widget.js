@@ -13,8 +13,7 @@
             fullName: ["full name", "fullname", "name", "nombre completo", "employee", "person", "user"],
             email: ["email", "e-mail", "mail", "correo"],
             phone: ["phone number", "phone", "mobile", "cell", "contact", "teléfono", "celular"],
-            role: ["role", "job", "title", "position", "permissions", "cargo", "puesto"],
-            branch: ["main branch", "branch", "location", "office", "site", "city", "county", "town", "territory", "area", "locations"]
+            role: ["role", "job", "title", "position", "permissions", "cargo", "puesto", "main branch", "branch", "location", "locations"]
         },
         roles1Look: ["Sales Representative", "Installer", "Sales Manager", "Finance Manager", "Admin", "User"]
     };
@@ -39,7 +38,7 @@
         position: fixed;
         top: 20px;
         right: 20px;
-        width: 360px;
+        width: 370px;
         max-width: 92vw;
         max-height: 85vh;
         background: #ffffff;
@@ -93,7 +92,7 @@
                 </div>
             </div>
 
-            <!-- STEP 3: QUEUE & FULL USER LIST -->
+            <!-- STEP 3: QUEUE & FULL USER LIST WITH CLICKABLE FIELDS -->
             <div id="w-step-3" style="display:none;">
                 <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:8px; margin-bottom:10px;">
                     <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700;">
@@ -105,8 +104,8 @@
                     </div>
                 </div>
 
-                <div style="font-size:10px; color:#64748b; font-weight:800; margin-bottom:6px; text-transform:uppercase;">USER BATCH LIST</div>
-                <div id="w-full-user-list" style="max-height:300px; overflow-y:auto;"></div>
+                <div style="font-size:10px; color:#64748b; font-weight:800; margin-bottom:6px; text-transform:uppercase;">USER BATCH LIST - 💡 TAP FIELD TO COPY</div>
+                <div id="w-full-user-list" style="max-height:320px; overflow-y:auto;"></div>
             </div>
         </div>
         <div id="w-toast" style="position:absolute; bottom:8px; left:50%; transform:translateX(-50%); padding:6px 12px; background:#6d28d9; color:white; border-radius:15px; font-size:11px; font-weight:700; opacity:0; pointer-events:none; transition:all 0.2s ease;"></div>
@@ -369,23 +368,55 @@
 
         container.innerHTML = state.users.map((u, i) => {
             const isDone = !!u.completed;
+            const roleDisplay = u.branch ? `${u.role1Look || u.role || 'Sales Representative'} (${u.branch})` : (u.role1Look || u.role || 'Sales Representative');
+
             return `
-                <div style="background:${isDone ? '#f0fdf4' : '#ffffff'}; border:1px solid ${isDone ? '#bbf7d0' : '#e2e8f0'}; border-radius:10px; padding:10px; margin-bottom:6px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <div style="background:${isDone ? '#f0fdf4' : '#ffffff'}; border:1px solid ${isDone ? '#bbf7d0' : '#e2e8f0'}; border-radius:10px; padding:10px; margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                         <b style="font-size:12px; color:${isDone ? '#166534' : '#1e1b4b'};">${i + 1}. ${u.firstName} ${u.lastName}</b>
                         <button type="button" style="padding:3px 8px; border-radius:12px; font-size:10px; font-weight:700; border:1px solid ${isDone ? '#059669' : '#cbd5e1'}; background:${isDone ? '#10b981' : '#ffffff'}; color:${isDone ? '#ffffff' : '#64748b'}; cursor:pointer;" onclick="window.widgetToggleDone(${i})">
                             ${isDone ? '✓ Created' : '☐ Mark Done'}
                         </button>
                     </div>
-                    <div style="font-size:11px; color:#64748b;">📧 ${u.email || '-'} | 📱 ${u.phone || '-'}</div>
-                    <div style="font-size:11px; color:#16a34a; font-weight:700; margin-top:2px;">🟢 Role: ${u.role1Look || 'Sales Representative'}</div>
-                    <button type="button" style="width:100%; margin-top:6px; background:#16a34a; color:white; border:none; padding:6px; border-radius:6px; font-weight:700; font-size:11px; cursor:pointer;" onclick="window.widgetFillUser(${i})">
+
+                    <!-- CLICKABLE COPY FIELDS FOR EVERY FIELD -->
+                    <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;">
+                        <span style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:3px 7px; border-radius:6px; font-size:10.5px; cursor:pointer;" onclick="window.widgetCopyText('${escapeHtml(u.firstName)}', 'First Name')">
+                            <span style="color:#64748b;">First:</span> <b style="margin-left:3px;">${u.firstName}</b> 📋
+                        </span>
+                        <span style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:3px 7px; border-radius:6px; font-size:10.5px; cursor:pointer;" onclick="window.widgetCopyText('${escapeHtml(u.lastName)}', 'Last Name')">
+                            <span style="color:#64748b;">Last:</span> <b style="margin-left:3px;">${u.lastName}</b> 📋
+                        </span>
+                        <span style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:3px 7px; border-radius:6px; font-size:10.5px; cursor:pointer;" onclick="window.widgetCopyText('${escapeHtml(u.email)}', 'Email')">
+                            <span style="color:#64748b;">Email:</span> <b style="margin-left:3px;">${u.email || '-'}</b> 📋
+                        </span>
+                        <span style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:3px 7px; border-radius:6px; font-size:10.5px; cursor:pointer;" onclick="window.widgetCopyText('${escapeHtml(u.phone)}', 'Phone')">
+                            <span style="color:#64748b;">Phone:</span> <b style="margin-left:3px;">${u.phone || '-'}</b> 📋
+                        </span>
+                        <span style="display:inline-flex; align-items:center; background:#faf5ff; border:1px solid #ddd6fe; color:#1e1b4b; padding:3px 7px; border-radius:6px; font-size:10.5px; cursor:pointer;" onclick="window.widgetCopyText('${escapeHtml(roleDisplay)}', 'Role')">
+                            <span style="color:#16a34a;">Role:</span> <b style="margin-left:3px;">${roleDisplay}</b> 📋
+                        </span>
+                    </div>
+
+                    <button type="button" style="width:100%; background:#16a34a; color:white; border:none; padding:6px; border-radius:6px; font-weight:700; font-size:11px; cursor:pointer;" onclick="window.widgetFillUser(${i})">
                         📝 FILL 1LOOK FORM NOW
                     </button>
                 </div>
             `;
         }).join('');
     }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    window.widgetCopyText = function(text, label) {
+        if (!text || text === '-') return;
+        navigator.clipboard.writeText(text).then(() => {
+            toast(`Copied ${label}: "${text}"`, 'success');
+        });
+    };
 
     window.widgetToggleDone = function(i) {
         if (state.users[i]) {
@@ -426,8 +457,7 @@
                     e.type === "tel" || 
                     (e.name || "").toLowerCase().includes("phone") || (e.name || "").toLowerCase().includes("mobile") ||
                     (e.placeholder || "").toLowerCase().includes("phone") || (e.placeholder || "").toLowerCase().includes("mobile") ||
-                    (e.id || "").toLowerCase().includes("phone") || (e.id || "").toLowerCase().includes("mobile") ||
-                    (e.getAttribute('aria-label') || "").toLowerCase().includes("phone")
+                    (e.id || "").toLowerCase().includes("phone")
                 );
             }
 
