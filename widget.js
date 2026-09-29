@@ -356,6 +356,7 @@
 
         function setInput(keywords, val, isEmail = false) {
             if (!val) return;
+            if (!Array.isArray(keywords)) keywords = [keywords];
             const allInputs = Array.from(document.querySelectorAll('input'));
             if (allInputs.length === 0) return;
 
@@ -373,6 +374,17 @@
                 );
             }
 
+            const isPhone = keywords.some(k => k.includes("phone") || k.includes("mobile") || k.includes("cell") || k.includes("tel"));
+            if (!input && isPhone) {
+                input = inputs.find(e => 
+                    e.type === "tel" || 
+                    (e.name || "").toLowerCase().includes("phone") || (e.name || "").toLowerCase().includes("mobile") ||
+                    (e.placeholder || "").toLowerCase().includes("phone") || (e.placeholder || "").toLowerCase().includes("mobile") ||
+                    (e.id || "").toLowerCase().includes("phone") || (e.id || "").toLowerCase().includes("mobile") ||
+                    (e.getAttribute('aria-label') || "").toLowerCase().includes("phone")
+                );
+            }
+
             if (!input) {
                 input = inputs.find(e => {
                     const ph = (e.placeholder || "").toLowerCase();
@@ -386,7 +398,7 @@
             if (!input) {
                 const labels = Array.from(document.querySelectorAll('label, div, span, p, th, td')).filter(e => {
                     const txt = (e.innerText || "").trim().toLowerCase();
-                    return keywords.some(k => txt === k || txt.startsWith(k)) && e.children.length === 0;
+                    return keywords.some(k => txt === k || txt.startsWith(k) || txt.includes(k)) && e.children.length === 0;
                 });
 
                 for (const label of labels) {
@@ -394,12 +406,23 @@
                         input = document.getElementById(label.htmlFor);
                         if (input) break;
                     }
-                    const parent = label.closest('div, section, td, tr, form, fieldset');
+                    if (label.getAttribute('for')) {
+                        input = document.getElementById(label.getAttribute('for'));
+                        if (input) break;
+                    }
+                    const inside = label.querySelector('input:not([type="hidden"])');
+                    if (inside) { input = inside; break; }
+
+                    const parent = label.closest('div, section, td, tr, form, fieldset, .form-group, .field');
                     if (parent) {
-                        input = parent.querySelector('input');
+                        input = parent.querySelector('input:not([type="hidden"])');
                         if (input) break;
                     }
                 }
+            }
+
+            if (!input && isPhone) {
+                input = inputs.find(e => (e.placeholder || "").includes('_') || (e.value || "").includes('_')) || inputs[3];
             }
 
             if (input) {
@@ -408,9 +431,17 @@
                 const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
                 if (nativeSetter) nativeSetter.call(input, val);
                 else input.value = val;
+
                 ['focus', 'keydown', 'keypress', 'input', 'change', 'keyup', 'blur'].forEach(evt => 
                     input.dispatchEvent(new Event(evt, { bubbles: true, cancelable: true }))
                 );
+
+                const digitsOnly = val.replace(/\D/g, '');
+                if ((!input.value || input.value.trim() === "") && digitsOnly) {
+                    if (nativeSetter) nativeSetter.call(input, digitsOnly);
+                    else input.value = digitsOnly;
+                    ['input', 'change', 'blur'].forEach(evt => input.dispatchEvent(new Event(evt, { bubbles: true })));
+                }
             }
         }
 

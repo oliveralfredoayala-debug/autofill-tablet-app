@@ -255,6 +255,22 @@ function parseSmartData(raw) {
     return parseTextOrEmailData(raw);
 }
 
+function cleanPhone(raw) {
+    if (!raw) return "555-555-5555";
+    const str = String(raw).trim();
+    const digits = str.replace(/\D/g, '');
+    if (digits.length === 10) {
+        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    if (digits.length === 11 && digits.startsWith('1')) {
+        return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+    }
+    if (digits.length >= 7 && digits.length <= 15) {
+        return str;
+    }
+    return "555-555-5555";
+}
+
 function parseExcelTsvData(raw) {
     const lines = raw.split(/\r?\n/).filter(l => l.trim());
     if (lines.length === 0) return [];
@@ -282,10 +298,23 @@ function parseExcelTsvData(raw) {
         let firstName = nameParts[0] || "";
         let lastName = nameParts.length > 1 ? nameParts.pop() : "";
 
+        let rawPhone = "";
+        if (mapping.phone > -1) {
+            const candidate = val('phone');
+            if (candidate.replace(/\D/g, '').length >= 7) rawPhone = candidate;
+        }
+        if (!rawPhone) {
+            const foundCell = cols.find(c => {
+                const d = c.trim().replace(/\D/g, '');
+                return d.length >= 7 && d.length <= 15 && /(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\b\d{10}\b/.test(c);
+            });
+            if (foundCell) rawPhone = foundCell.trim();
+        }
+
         return {
             firstName, lastName,
             email: val('email'),
-            phone: val('phone'),
+            phone: cleanPhone(rawPhone),
             role: val('role'),
             branch: branchIndices.length > 0 ? branchIndices.map(i => cols[i]?.trim()).filter(x => x).join(', ') : val('branch'),
             managerName: mapping.managerName > -1 ? cols[mapping.managerName]?.trim() : "",
@@ -302,6 +331,8 @@ function parseTextOrEmailData(text) {
     for (const block of blocks) {
         const user = { firstName: "", lastName: "", email: "", phone: "", role: "", managerName: "", managerEmail: "", branch: "", originalRole: "" };
         const lines = block.split(/\r?\n/);
+        let rawPhone = "";
+
         for (const line of lines) {
             const kvMatch = line.match(/^\s*([^:\-=]+)[:\-=]\s*(.+)$/);
             if (kvMatch) {
@@ -315,16 +346,19 @@ function parseTextOrEmailData(text) {
                     user.lastName = parts.length > 1 ? parts.slice(1).join(' ') : "";
                 }
                 else if (key.match(/email|mail|correo/)) user.email = val;
-                else if (key.match(/phone|mobile|cell|tel[ée]fono/)) user.phone = val;
+                else if (key.match(/phone|mobile|cell|tel[ée]fono/)) {
+                    if (val.replace(/\D/g, '').length >= 7) rawPhone = val;
+                }
                 else if (key.match(/role|position|job|title/)) { user.role = val; user.originalRole = val; }
                 else if (key.match(/branch|location|office|site/)) user.branch = val;
             } else {
                 const emailMatch = line.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
                 if (emailMatch && !user.email) user.email = emailMatch[0];
-                const phoneMatch = line.match(/\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
-                if (phoneMatch && !user.phone) user.phone = phoneMatch[0];
+                const phoneMatch = line.match(/(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\b\d{10}\b/);
+                if (phoneMatch && !rawPhone) rawPhone = phoneMatch[0];
             }
         }
+        user.phone = cleanPhone(rawPhone);
         if (user.firstName || user.email) users.push(user);
     }
     return users;
