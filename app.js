@@ -290,20 +290,11 @@ function loadState() {
 
 function resetEverything() {
     try {
-        const users = state.users || [];
-        const incompleteCount = users.filter(u => u && !u.completed).length;
-        if (users.length > 0) {
-            let msg = "Clear batch progress and start fresh?";
-            if (incompleteCount > 0) {
-                msg = `⚠️ Warning: You have ${incompleteCount} user(s) that are NOT marked as completed!\n\nAre you sure you want to reset and clear all data?`;
-            }
-            if (!confirm(msg)) return;
-        }
-
         state = { users: [], currentIndex: 0, sendWelcome: true, status: "wizard" };
         localStorage.removeItem('tablet_app_state');
         localStorage.removeItem('tablet_current_user');
         if (document.getElementById('wiz-data')) document.getElementById('wiz-data').value = "";
+        if (document.getElementById('parse-error')) document.getElementById('parse-error').innerText = "";
         render();
         if (typeof showToast === 'function') showToast("🔄 App reset to Step 1", "info");
     } catch (err) {

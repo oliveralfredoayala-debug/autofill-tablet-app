@@ -149,18 +149,10 @@
     }
 
     function resetWidget() {
-        const incompleteCount = state.users.filter(u => !u.completed).length;
-        if (state.users.length > 0) {
-            let msg = "Reset widget data?";
-            if (incompleteCount > 0) {
-                msg = `⚠️ Warning: You have ${incompleteCount} user(s) that are NOT marked as completed!\n\nAre you sure you want to reset and clear all data?`;
-            }
-            if (!confirm(msg)) return;
-        }
-
         state = { users: [], currentIndex: 0, sendWelcome: true, status: "wizard" };
         localStorage.removeItem('widget_app_state');
-        document.getElementById('w-data').value = "";
+        if (document.getElementById('w-data')) document.getElementById('w-data').value = "";
+        if (document.getElementById('w-error')) document.getElementById('w-error').innerText = "";
         render();
     }
 
