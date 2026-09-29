@@ -22,7 +22,7 @@ let state = {
 
 let screens = {};
 
-document.addEventListener('DOMContentLoaded', () => {
+function initApp() {
     screens = {
         wizard: document.getElementById('ui-wizard'),
         config: document.getElementById('ui-config'),
@@ -33,27 +33,15 @@ document.addEventListener('DOMContentLoaded', () => {
     render();
     setupListeners();
     setupBookmarklet();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
 
 function setupListeners() {
-    document.querySelectorAll('.btn-global-reset').forEach(btn => {
-        btn.onclick = resetEverything;
-    });
-
-    document.getElementById('btn-parse').onclick = parseAndInit;
-    document.getElementById('btn-back-parser').onclick = () => {
-        state.status = 'wizard';
-        saveState();
-        render();
-    };
-    document.getElementById('btn-apply-config').onclick = applyConfigAndStart;
-
-    const prevBtn = document.getElementById('btn-prev-user');
-    if (prevBtn) prevBtn.onclick = prevUser;
-
-    const nextBtn = document.getElementById('btn-next-user');
-    if (nextBtn) nextBtn.onclick = nextUser;
-
     const dropdown = document.getElementById('user-select-dropdown');
     if (dropdown) {
         dropdown.onchange = (e) => {
@@ -219,6 +207,44 @@ window.copyUserRow = function(idx) {
 };
 
 document.addEventListener('click', (e) => {
+    const resetBtn = e.target.closest('.btn-global-reset');
+    if (resetBtn) {
+        resetEverything();
+        return;
+    }
+
+    const applyBtn = e.target.closest('#btn-apply-config');
+    if (applyBtn) {
+        applyConfigAndStart();
+        return;
+    }
+
+    const parseBtn = e.target.closest('#btn-parse');
+    if (parseBtn) {
+        parseAndInit();
+        return;
+    }
+
+    const backBtn = e.target.closest('#btn-back-parser');
+    if (backBtn) {
+        state.status = 'wizard';
+        saveState();
+        render();
+        return;
+    }
+
+    const prevBtn = e.target.closest('#btn-prev-user');
+    if (prevBtn) {
+        prevUser();
+        return;
+    }
+
+    const nextBtn = e.target.closest('#btn-next-user');
+    if (nextBtn) {
+        nextUser();
+        return;
+    }
+
     const chip = e.target.closest('.copy-field-box, .copy-field-chip');
     if (chip) {
         const val = chip.getAttribute('data-copy-val');
@@ -263,21 +289,26 @@ function loadState() {
 }
 
 function resetEverything() {
-    const incompleteCount = state.users.filter(u => !u.completed).length;
-    if (state.users.length > 0) {
-        let msg = "Clear batch progress and start fresh?";
-        if (incompleteCount > 0) {
-            msg = `⚠️ Warning: You have ${incompleteCount} user(s) that are NOT marked as completed!\n\nAre you sure you want to reset and clear all data?`;
+    try {
+        const users = state.users || [];
+        const incompleteCount = users.filter(u => u && !u.completed).length;
+        if (users.length > 0) {
+            let msg = "Clear batch progress and start fresh?";
+            if (incompleteCount > 0) {
+                msg = `⚠️ Warning: You have ${incompleteCount} user(s) that are NOT marked as completed!\n\nAre you sure you want to reset and clear all data?`;
+            }
+            if (!confirm(msg)) return;
         }
-        if (!confirm(msg)) return;
-    }
 
-    state = { users: [], currentIndex: 0, sendWelcome: true, status: "wizard" };
-    localStorage.removeItem('tablet_app_state');
-    localStorage.removeItem('tablet_current_user');
-    if (document.getElementById('wiz-data')) document.getElementById('wiz-data').value = "";
-    render();
-    showToast("🔄 App reset to Step 1", "info");
+        state = { users: [], currentIndex: 0, sendWelcome: true, status: "wizard" };
+        localStorage.removeItem('tablet_app_state');
+        localStorage.removeItem('tablet_current_user');
+        if (document.getElementById('wiz-data')) document.getElementById('wiz-data').value = "";
+        render();
+        if (typeof showToast === 'function') showToast("🔄 App reset to Step 1", "info");
+    } catch (err) {
+        console.error("Error in resetEverything:", err);
+    }
 }
 
 function render() {
@@ -540,17 +571,27 @@ function renderConfigUI() {
 }
 
 function applyConfigAndStart() {
-    const map1Look = {};
-    document.querySelectorAll('.map-select-1look').forEach(s => map1Look[s.dataset.original] = s.value);
+    try {
+        const map1Look = {};
+        document.querySelectorAll('.map-select-1look').forEach(s => {
+            const orig = s.getAttribute('data-original') || "";
+            map1Look[orig] = s.value;
+        });
 
-    state.users.forEach(u => {
-        const origKey = u.originalRole || u.role || "";
-        u.role1Look = map1Look[origKey] || map1Look[""] || 'Sales Representative';
-    });
+        if (state.users && state.users.length > 0) {
+            state.users.forEach(u => {
+                const origKey = u.originalRole || u.role || "";
+                u.role1Look = map1Look[origKey] || map1Look[""] || map1Look["undefined"] || 'Sales Representative';
+            });
+        }
 
-    state.status = 'active';
-    saveState();
-    render();
+        state.status = 'active';
+        saveState();
+        render();
+    } catch (err) {
+        console.error("Error in applyConfigAndStart:", err);
+        if (typeof showToast === 'function') showToast("❌ Error starting batch: " + err.message, "error");
+    }
 }
 
 function renderQueue() {
