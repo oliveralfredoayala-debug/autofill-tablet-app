@@ -68,6 +68,83 @@ function setupListeners() {
             resetEverything();
         }
     };
+
+    // Drag & Drop File Handlers
+    const dropZone = document.getElementById('drop-zone');
+    const dropOverlay = document.getElementById('drop-overlay');
+    const fileInput = document.getElementById('file-upload-input');
+
+    if (dropZone) {
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (dropOverlay) dropOverlay.style.display = 'flex';
+                dropZone.style.borderColor = '#7c3aed';
+                dropZone.style.background = '#f3e8ff';
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (dropOverlay) dropOverlay.style.display = 'none';
+                dropZone.style.borderColor = '#c4b5fd';
+                dropZone.style.background = '#faf5ff';
+            }, false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files && files.length > 0) {
+                handleFileDrop(files[0]);
+            }
+        });
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                handleFileDrop(e.target.files[0]);
+            }
+        });
+    }
+}
+
+async function handleFileDrop(file) {
+    if (!file) return;
+    const name = file.name.toLowerCase();
+    showToast(`📂 Processing file: "${file.name}"...`, "info");
+
+    try {
+        let tsvText = "";
+        if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+            if (typeof XLSX === 'undefined') {
+                return showToast("⚠️ Excel parser loading. Please try again.", "error");
+            }
+            const buffer = await file.arrayBuffer();
+            const workbook = XLSX.read(buffer, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            tsvText = XLSX.utils.sheet_to_csv(worksheet, { FS: '\t' });
+        } else {
+            tsvText = await file.text();
+        }
+
+        if (tsvText.trim()) {
+            document.getElementById('wiz-data').value = tsvText;
+            showToast(`✅ Loaded "${file.name}"! Parsing...`, "success");
+            parseAndInit();
+        } else {
+            showToast("⚠️ File appears to be empty.", "error");
+        }
+    } catch (err) {
+        console.error("Error reading file:", err);
+        showToast(`❌ Error reading file: ${err.message}`, "error");
+    }
+}
 }
 
 function saveState() {

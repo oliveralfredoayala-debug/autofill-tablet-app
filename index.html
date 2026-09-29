@@ -237,9 +237,25 @@
             </div>
 
             <div class="section">
-                <label>Data Input (Excel Copy-Paste or Email Text)</label>
-                <div class="subtitle">Paste table rows from Excel/Sheets or blocks of email text (Name, Email, Phone, Role, Branch).</div>
-                <textarea id="wiz-data" placeholder="Paste data here...&#10;&#10;Supported formats:&#10;1) Excel Copy-Paste (Name | Email | Phone | Role...)&#10;2) Email Format:&#10;   First Name: John&#10;   Last Name: Doe&#10;   Email: john@company.com&#10;   Phone: 555-1234&#10;   Role: Sales Representative&#10;   Branch: Austin"></textarea>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <label style="margin:0;">Data Input (Excel File or Paste Text)</label>
+                    <label for="file-upload-input" style="margin:0; font-size:12px; color:#7c3aed; cursor:pointer; font-weight:700; text-transform:none;" title="Select an Excel or CSV file from your computer">
+                        📂 Choose File...
+                    </label>
+                    <input type="file" id="file-upload-input" accept=".xlsx, .xls, .csv, .tsv, .txt" style="display:none;">
+                </div>
+                <div class="subtitle">Drag and drop an <b>Excel file (.xlsx, .csv)</b> or paste table rows / email text blocks.</div>
+                
+                <div id="drop-zone" style="border: 2px dashed #c4b5fd; border-radius: 12px; background: #faf5ff; display: flex; flex-direction: column; position: relative; transition: all 0.2s ease; min-height: 200px;">
+                    <textarea id="wiz-data" style="flex:1; min-height:190px; border:none; background:transparent; padding:12px; outline:none; font-family:inherit; font-size:13px;" placeholder="📁 Drag & drop your Excel file (.xlsx, .csv) here!&#10;&#10;OR paste raw text data below:&#10;1) Excel Copy-Paste (Name | Email | Phone | Role...)&#10;2) Email Format:&#10;   First Name: John&#10;   Last Name: Doe&#10;   Email: john@company.com&#10;   Phone: 555-1234&#10;   Role: Sales Representative&#10;   Branch: Austin"></textarea>
+                    
+                    <div id="drop-overlay" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(243, 232, 255, 0.95); border-radius:10px; align-items:center; justify-content:center; flex-direction:column; z-index:10; pointer-events:none;">
+                        <div style="font-size: 36px; margin-bottom: 6px;">📂</div>
+                        <div style="font-weight: 700; color: #6d28d9; font-size: 15px;">Drop Excel File (.xlsx, .csv) Here!</div>
+                        <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">Will automatically parse user data</div>
+                    </div>
+                </div>
+
                 <button id="btn-parse" style="margin-top:12px;">PARSE & REVIEW INFO ➡️</button>
                 <div id="parse-error" style="color: #dc2626; font-size: 12px; font-weight: 600; margin-top: 6px;"></div>
             </div>
@@ -320,6 +336,7 @@
 
     <div id="panel-toast"></div>
 
+    <script src="xlsx.full.min.js"></script>
     <script src="app.js"></script>
 </body>
 
