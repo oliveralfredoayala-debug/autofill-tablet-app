@@ -296,25 +296,32 @@ function render() {
 }
 
 function parseAndInit() {
-    const raw = document.getElementById('wiz-data').value;
-    document.getElementById('parse-error').innerText = "";
+    try {
+        const raw = document.getElementById('wiz-data').value;
+        document.getElementById('parse-error').innerText = "";
 
-    if (!raw.trim()) {
-        document.getElementById('parse-error').innerText = "Please paste user data to continue.";
-        return;
+        if (!raw.trim()) {
+            document.getElementById('parse-error').innerText = "Please paste user data to continue.";
+            return;
+        }
+
+        const users = parseSmartData(raw);
+        if (users.length === 0) {
+            document.getElementById('parse-error').innerText = "Could not parse any user information. Check input format.";
+            return;
+        }
+
+        state.users = users;
+        state.currentIndex = 0;
+        state.status = 'config';
+        saveState();
+        render();
+    } catch (err) {
+        console.error("Parse error:", err);
+        const errEl = document.getElementById('parse-error');
+        if (errEl) errEl.innerText = "Error parsing data: " + err.message;
+        if (typeof showToast === 'function') showToast("❌ Error parsing data: " + err.message, "error");
     }
-
-    const users = parseSmartData(raw);
-    if (users.length === 0) {
-        document.getElementById('parse-error').innerText = "Could not parse any user information. Check input format.";
-        return;
-    }
-
-    state.users = users;
-    state.currentIndex = 0;
-    state.status = 'config';
-    saveState();
-    render();
 }
 
 function parseSmartData(raw) {
@@ -457,7 +464,12 @@ function parseTextOrEmailData(text) {
 }
 
 function isValidUser(u) {
-    if (!u.firstName && !u.email) return false;
+    if (!u) return false;
+    const fName = (u.firstName || "").toLowerCase().trim();
+    const lName = (u.lastName || "").toLowerCase().trim();
+    const email = (u.email || "").toLowerCase().trim();
+
+    if (!fName && !email) return false;
 
     const junk = [
         "first name", "last name", "given name", "family name", "name", "full name",
@@ -467,8 +479,8 @@ function isValidUser(u) {
         "platform", "active", "deactivated"
     ];
 
-    const fullName = (u.firstName + " " + u.lastName).toLowerCase().trim();
-    if (junk.includes(fullName) || junk.includes(u.firstName.toLowerCase()) || junk.includes(u.email.toLowerCase())) {
+    const fullName = (fName + " " + lName).trim();
+    if (junk.includes(fullName) || (fName && junk.includes(fName)) || (email && junk.includes(email))) {
         return false;
     }
     return true;

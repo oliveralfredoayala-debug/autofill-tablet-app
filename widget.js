@@ -189,19 +189,30 @@
     }
 
     function parseAndInit() {
-        const raw = document.getElementById('w-data').value;
-        if (!raw.trim()) { document.getElementById('w-error').innerText = "Please paste data first."; return; }
-        const users = raw.includes('\t') || raw.includes(',') ? parseExcel(raw) : parseText(raw);
-        if (users.length === 0) { document.getElementById('w-error').innerText = "No user data found."; return; }
-        state.users = users;
-        state.currentIndex = 0;
-        state.status = 'config';
-        saveState();
-        render();
+        try {
+            const raw = document.getElementById('w-data').value;
+            if (!raw.trim()) { document.getElementById('w-error').innerText = "Please paste data first."; return; }
+            const users = raw.includes('\t') || raw.includes(',') ? parseExcel(raw) : parseText(raw);
+            if (users.length === 0) { document.getElementById('w-error').innerText = "No user data found."; return; }
+            state.users = users;
+            state.currentIndex = 0;
+            state.status = 'config';
+            saveState();
+            render();
+        } catch (err) {
+            console.error("Widget parse error:", err);
+            const errEl = document.getElementById('w-error');
+            if (errEl) errEl.innerText = "Error parsing data: " + err.message;
+        }
     }
 
     function isValidUser(u) {
-        if (!u.firstName && !u.email) return false;
+        if (!u) return false;
+        const fName = (u.firstName || "").toLowerCase().trim();
+        const lName = (u.lastName || "").toLowerCase().trim();
+        const email = (u.email || "").toLowerCase().trim();
+
+        if (!fName && !email) return false;
         const junk = [
             "first name", "last name", "given name", "family name", "name", "full name",
             "permissions", "role", "email", "phone", "mobile phone", "manager", "branch",
@@ -209,8 +220,8 @@
             "finance manager", "installer", "admin", "user", "dealer name", "licensed",
             "platform", "active", "deactivated"
         ];
-        const fullName = (u.firstName + " " + u.lastName).toLowerCase().trim();
-        if (junk.includes(fullName) || junk.includes(u.firstName.toLowerCase()) || junk.includes(u.email.toLowerCase())) return false;
+        const fullName = (fName + " " + lName).trim();
+        if (junk.includes(fullName) || (fName && junk.includes(fName)) || (email && junk.includes(email))) return false;
         return true;
     }
 
