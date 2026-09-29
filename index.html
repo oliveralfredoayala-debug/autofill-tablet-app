@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1Look & Estimator Smart Autofill - Web App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fc;
+            color: #1e1b4b;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .header-bar {
+            background: #ffffff;
+            border-bottom: 1.5px solid #e9d5ff;
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(124, 58, 237, 0.05);
+        }
+
+        .header-bar h1 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: #6d28d9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .container {
+            max-width: 680px;
+            margin: 20px auto;
+            padding: 0 16px 40px;
+        }
+
+        .section {
+            background: #ffffff;
+            padding: 16px;
+            border-radius: 14px;
+            border: 1.5px solid #e9d5ff;
+            box-shadow: 0 4px 16px rgba(109, 40, 217, 0.04);
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 11px;
+            color: #5b21b6;
+            margin-bottom: 6px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 14px;
+        }
+
+        textarea,
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 10px 14px;
+            background: #faf5ff;
+            border: 1.5px solid #ddd6fe;
+            color: #1e1b4b;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 13px;
+            transition: all 0.15s ease;
+        }
+
+        textarea:focus,
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #7c3aed;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 200px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px 16px;
+            background: #7c3aed;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.15s ease;
+            box-shadow: 0 2px 8px rgba(124, 58, 237, 0.2);
+            touch-action: manipulation;
+        }
+
+        button:hover {
+            background: #6d28d9;
+            box-shadow: 0 4px 14px rgba(109, 40, 217, 0.3);
+            transform: translateY(-1px);
+        }
+
+        button.secondary {
+            background: #f3e8ff;
+            border: 1.5px solid #ddd6fe;
+            color: #6d28d9;
+            box-shadow: none;
+        }
+
+        button.secondary:hover {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+
+        button.danger {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #dc2626;
+            box-shadow: none;
+        }
+
+        .sys-btn {
+            padding: 10px 8px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+
+        .copy-chip {
+            display: inline-flex;
+            align-items: center;
+            background: #ffffff;
+            border: 1.5px solid #c4b5fd;
+            color: #5b21b6;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            margin: 3px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 3px rgba(109, 40, 217, 0.05);
+            touch-action: manipulation;
+        }
+
+        .copy-chip:hover, .copy-chip:active {
+            background: #7c3aed;
+            color: #ffffff;
+            border-color: #7c3aed;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #panel-toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 700;
+            z-index: 9999;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(109, 40, 217, 0.3);
+            color: white;
+            transition: opacity 0.2s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .bookmarklet-box {
+            background: #f5f3ff;
+            border: 1.5px dashed #7c3aed;
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 14px;
+            text-align: center;
+        }
+
+        .bookmarklet-link {
+            display: inline-block;
+            background: #7c3aed;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            text-decoration: none;
+            margin-top: 8px;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header-bar">
+        <h1>⚡ 1Look & Estimator Tablet Assistant</h1>
+        <button type="button" class="secondary btn-global-reset" style="width:auto; padding:6px 12px; font-size:12px;">🔄 Reset</button>
+    </div>
+
+    <div class="container">
+        
+        <!-- STEP 1: PARSE DATA -->
+        <div id="ui-wizard">
+            <div class="section">
+                <label>Target System(s)</label>
+                <div style="display:flex; gap:8px; margin-top:6px;">
+                    <button type="button" class="sys-btn" id="sys-btn-both" style="flex:1;">Both Systems</button>
+                    <button type="button" class="sys-btn secondary" id="sys-btn-1look" style="flex:1;">1Look Only</button>
+                    <button type="button" class="sys-btn secondary" id="sys-btn-estimator" style="flex:1;">Estimator Only</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <label>Data Input (Excel Copy-Paste or Email Text)</label>
+                <div class="subtitle">Paste table rows from Excel/Sheets or blocks of email text (Name, Email, Phone, Role, Branch).</div>
+                <textarea id="wiz-data" placeholder="Paste data here...&#10;&#10;Supported formats:&#10;1) Excel Copy-Paste (Name | Email | Phone | Role...)&#10;2) Email Format:&#10;   First Name: John&#10;   Last Name: Doe&#10;   Email: john@company.com&#10;   Phone: 555-1234&#10;   Role: Sales Representative&#10;   Branch: Austin"></textarea>
+                <button id="btn-parse" style="margin-top:12px;">PARSE & REVIEW INFO ➡️</button>
+                <div id="parse-error" style="color: #dc2626; font-size: 12px; font-weight: 600; margin-top: 6px;"></div>
+            </div>
+
+            <!-- TABLET BOOKMARKLET INSTRUCTIONS -->
+            <div class="bookmarklet-box">
+                <div style="font-weight:700; color:#6d28d9; font-size:13px;">📱 iPad / Tablet 1-Click Autofill Bookmarklet</div>
+                <div style="font-size:11px; color:#6b7280; margin-top:4px;">Drag or save this button to your tablet browser Bookmarks bar. Click it while viewing 1Look or Estimator to auto-fill the current active user!</div>
+                <a href="javascript:(function(){let u=JSON.parse(localStorage.getItem('tablet_current_user')||'{}');if(!u.firstName&&!u.email){alert('Please set up an active user batch first in the Tablet Assistant app!');return;}let f=(k,v)=>{if(!v)return;let el=Array.from(document.querySelectorAll('input')).find(e=>k.some(x=>(e.placeholder||'').toLowerCase().includes(x)||(e.name||'').toLowerCase().includes(x)||(e.id||'').toLowerCase().includes(x)));if(el){el.focus();el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));}};f(['first','nombre'],u.firstName);f(['last','apellido'],u.lastName);f(['email','correo'],u.email);f(['phone','tel'],u.phone);alert('✅ Filled '+u.firstName+' '+u.lastName+'!');})();" class="bookmarklet-link">⚡ 1-Click Tablet Autofill</a>
+            </div>
+        </div>
+
+        <!-- STEP 2: REVIEW INFO & ROLES -->
+        <div id="ui-config" class="hidden">
+            <div class="section">
+                <label id="summary-header">PARSED USERS (0)</label>
+                <div id="parsed-users-preview" style="max-height: 160px; overflow-y: auto; margin-top: 6px;"></div>
+            </div>
+
+            <div class="section" id="sec-1look-options">
+                <label>1Look Options</label>
+                <div style="margin-bottom: 8px;">
+                    <label style="font-weight: 500; color:#6b7280; text-transform:none; font-size:11px;">Administrative Unit</label>
+                    <input type="text" id="wiz-admin" placeholder="e.g. Finance Dept">
+                </div>
+            </div>
+
+            <div class="section">
+                <label>System Role Mappings</label>
+                <div id="mapping-list" style="margin-top:8px;"></div>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:12px;">
+                <button class="secondary" id="btn-back-parser" style="width: 35%;">⬅️ BACK</button>
+                <button id="btn-apply-config" style="width: 65%;">PROCEED TO BATCH 🚀</button>
+            </div>
+        </div>
+
+        <!-- STEP 3: QUEUE & QUICK COPY TOOLBAR -->
+        <div id="ui-queue" class="hidden">
+            <div style="display:flex; gap:8px; margin-bottom:12px;">
+                <button id="btn-skip" class="secondary" style="flex:1;">NEXT USER ⏭</button>
+                <button id="btn-copy-all-tsv" class="secondary" style="flex:1;">📋 Copy TSV Row</button>
+                <button id="btn-copy-summary" class="secondary" style="flex:1;">📋 Copy Summary</button>
+            </div>
+
+            <div class="section" style="background:#f5f3ff; border:1.5px solid #ddd6fe;">
+                <label style="color:#6d28d9;">📋 1-Touch Quick Copier for Tablet</label>
+                <div id="quick-copy-chips" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;"></div>
+            </div>
+
+            <div class="section" style="border:1.5px solid #c4b5fd;">
+                <label style="color:#6d28d9; font-size:12px;">Current Active User</label>
+                <h2 id="c-name" style="margin:4px 0 8px; font-size: 18px; color: #2e1065;">-</h2>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; font-size:13px;">
+                    <div>📧 Email: <span id="c-email" style="font-weight:600;">-</span></div>
+                    <div>📱 Phone: <span id="c-phone" style="font-weight:600;">-</span></div>
+                    <div id="c-role-1look-box" style="grid-column: span 2;">🟢 1LOOK ROLE: <span id="c-role-1look" style="color:#16a34a; font-weight:700;">-</span></div>
+                    <div id="c-role-estimator-box" style="grid-column: span 2;">🟧 ESTIMATOR ROLE: <span id="c-role-estimator" style="color:#ea580c; font-weight:700;">-</span></div>
+                    <div style="grid-column: span 2;">👤 Manager: <span id="c-manager">-</span></div>
+                    <div style="grid-column: span 2; border-top:1px solid #e9d5ff; padding-top:6px; margin-top:4px;">
+                        <div>🏛️ Admin Unit: <span id="c-admin" style="color:#6b7280;">-</span></div>
+                        <div>🏢 Branch(es): <span id="c-branch" style="color:#6d28d9; font-weight:700;">-</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align:center; padding:10px; background:#ede9fe; border-radius:10px; font-weight:700; color:#5b21b6; margin-bottom:12px;">
+                <span id="queue-counter">0 Users Remaining</span>
+            </div>
+
+            <div id="queue-list" style="margin-bottom:14px;"></div>
+
+            <button class="danger" id="btn-reset">🗑️ START A NEW BATCH</button>
+        </div>
+
+    </div>
+
+    <div id="panel-toast"></div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
