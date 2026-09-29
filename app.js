@@ -361,7 +361,11 @@ function renderConfigUI() {
         let defEstimator = 'Salesrep';
 
         if (rLower.includes('install')) { def1Look = 'Installer'; defEstimator = 'User'; }
-        else if (rLower.includes('sales')) { def1Look = 'Sales Representative'; defEstimator = 'Salesrep'; }
+        else if (rLower.includes('finance') || rLower === 'fm') { def1Look = 'Finance Manager'; defEstimator = 'Org Admin'; }
+        else if ((rLower.includes('sales') && rLower.includes('manager')) || rLower === 'sm') { def1Look = 'Sales Manager'; defEstimator = 'sales_manager'; }
+        else if (rLower.includes('sales') || rLower.includes('rep') || rLower === 'sr') { def1Look = 'Sales Representative'; defEstimator = 'Salesrep'; }
+        else if (rLower.includes('admin')) { def1Look = 'Admin'; defEstimator = 'Admin'; }
+        else if (rLower.includes('user')) { def1Look = 'User'; defEstimator = 'User'; }
 
         let roleHTML = `<div style="margin-bottom:6px; font-weight:bold; font-size:12px; color:#4c1d95;">Parsed Role: "${role || '(Default)'}"</div>`;
         if (sys === 'both' || sys === '1look') {
