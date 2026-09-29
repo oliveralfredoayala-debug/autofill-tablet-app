@@ -237,9 +237,16 @@
                 lastName: nameParts.length > 1 ? nameParts.slice(1).join(' ') : "",
                 email: parts[mapping.email > -1 ? mapping.email : 1] || "",
                 phone: parts[mapping.phone > -1 ? mapping.phone : 2] || "",
+            const uObj = {
+                firstName: nameParts[0] || "",
+                lastName: nameParts.length > 1 ? nameParts.slice(1).join(' ') : "",
+                email: parts[mapping.email > -1 ? mapping.email : 1] || "",
+                phone: parts[mapping.phone > -1 ? mapping.phone : 2] || "555-555-5555",
                 role: parts[mapping.role > -1 ? mapping.role : 3] || "",
                 originalRole: parts[mapping.role > -1 ? mapping.role : 3] || ""
             };
+            if (!uObj.phone) uObj.phone = "555-555-5555";
+            return uObj;
         }).filter(u => u.firstName || u.email);
     }
 
@@ -251,9 +258,10 @@
                 if (l.match(/first/i)) u.firstName = l.split(':')[1]?.trim() || "";
                 else if (l.match(/last/i)) u.lastName = l.split(':')[1]?.trim() || "";
                 else if (l.match(/email/i)) u.email = l.split(':')[1]?.trim() || "";
-                else if (l.match(/phone/i)) u.phone = l.split(':')[1]?.trim() || "";
+                else if (l.match(/phone|mobile|cell|tel/i)) u.phone = l.split(':')[1]?.trim() || "";
                 else if (l.match(/role/i)) { u.role = l.split(':')[1]?.trim() || ""; u.originalRole = u.role; }
             });
+            if (!u.phone) u.phone = "555-555-5555";
             return u;
         }).filter(u => u.firstName || u.email);
     }
