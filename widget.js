@@ -235,15 +235,18 @@
         const isTab = lines[0].includes('\t');
         const delim = isTab ? '\t' : ',';
         const cols = lines[0].split(delim).map(c => c.trim().toLowerCase());
-        const mapping = {
-            firstName: cols.findIndex(c => c.includes('first')),
-            lastName: cols.findIndex(c => c.includes('last')),
-            fullName: cols.findIndex(c => c.includes('name')),
-            email: cols.findIndex(c => c.includes('email')),
-            phone: cols.findIndex(c => c.includes('phone') || c.includes('mobile')),
-            role: cols.findIndex(c => c.includes('role')),
-            branch: cols.findIndex(c => c.includes('location') || c.includes('branch'))
-        };
+        const mapping = { firstName: -1, lastName: -1, fullName: -1, email: -1, phone: -1, role: -1, branch: -1 };
+        cols.forEach((c, idx) => {
+            if (c.includes('manager')) return;
+            if (mapping.email === -1 && c.includes('email')) mapping.email = idx;
+            else if (mapping.phone === -1 && (c.includes('phone') || c.includes('mobile'))) mapping.phone = idx;
+            else if (mapping.role === -1 && c.includes('role')) mapping.role = idx;
+            else if (mapping.firstName === -1 && c.includes('first')) mapping.firstName = idx;
+            else if (mapping.lastName === -1 && c.includes('last')) mapping.lastName = idx;
+            else if (mapping.fullName === -1 && c.includes('name')) mapping.fullName = idx;
+            
+            if (mapping.branch === -1 && (c.includes('location') || c.includes('branch'))) mapping.branch = idx;
+        });
         const data = (mapping.fullName > -1 || mapping.email > -1 || mapping.firstName > -1) ? lines.slice(1) : lines;
 
         return data.map(line => {

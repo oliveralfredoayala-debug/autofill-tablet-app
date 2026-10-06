@@ -366,18 +366,17 @@ function parseExcelTsvData(raw) {
     const mapping = { firstName: -1, lastName: -1, fullName: -1, email: -1, phone: -1, role: -1, branch: -1, managerName: -1, managerEmail: -1 };
     let hasHeaders = false;
 
-    firstLineCols.forEach((col, idx) => {
-        if ((CONFIG.keywords.firstName || []).some(w => col.includes(w) || col === w)) { mapping.firstName = idx; hasHeaders = true; }
-        else if ((CONFIG.keywords.lastName || []).some(w => col.includes(w) || col === w)) { mapping.lastName = idx; hasHeaders = true; }
-        else if ((CONFIG.keywords.fullName || []).some(w => col.includes(w) || col === w) && mapping.fullName === -1) { mapping.fullName = idx; hasHeaders = true; }
-        else if ((CONFIG.keywords.email || []).some(w => col.includes(w) || col === w)) { mapping.email = idx; hasHeaders = true; }
-        else if ((CONFIG.keywords.phone || []).some(w => col.includes(w) || col === w)) { mapping.phone = idx; hasHeaders = true; }
-        else if ((CONFIG.keywords.role || []).some(w => col.includes(w) || col === w)) { mapping.role = idx; hasHeaders = true; }
-    });
-
     const branchIndices = [];
     firstLineCols.forEach((col, idx) => {
         if (col.includes('manager')) return;
+
+        if (mapping.email === -1 && (CONFIG.keywords.email || []).some(w => col.includes(w) || col === w)) { mapping.email = idx; hasHeaders = true; }
+        else if (mapping.phone === -1 && (CONFIG.keywords.phone || []).some(w => col.includes(w) || col === w)) { mapping.phone = idx; hasHeaders = true; }
+        else if (mapping.role === -1 && (CONFIG.keywords.role || []).some(w => col.includes(w) || col === w)) { mapping.role = idx; hasHeaders = true; }
+        else if (mapping.firstName === -1 && (CONFIG.keywords.firstName || []).some(w => col.includes(w) || col === w)) { mapping.firstName = idx; hasHeaders = true; }
+        else if (mapping.lastName === -1 && (CONFIG.keywords.lastName || []).some(w => col.includes(w) || col === w)) { mapping.lastName = idx; hasHeaders = true; }
+        else if (mapping.fullName === -1 && (CONFIG.keywords.fullName || []).some(w => col.includes(w) || col === w)) { mapping.fullName = idx; hasHeaders = true; }
+
         if ((CONFIG.keywords.branch || []).some(w => col.includes(w) || col === w)) branchIndices.push(idx);
     });
 
