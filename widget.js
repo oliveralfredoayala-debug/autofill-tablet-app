@@ -185,7 +185,17 @@
         try {
             const raw = document.getElementById('w-data').value;
             if (!raw.trim()) { document.getElementById('w-error').innerText = "Please paste data first."; return; }
-            const users = raw.includes('\t') || raw.includes(',') ? parseExcel(raw) : parseText(raw);
+            let users = [];
+            if (raw.includes('\t')) {
+                users = parseExcel(raw);
+            } else {
+                const lines = raw.split(/\r?\n/).filter(l => l.trim());
+                if (lines.length > 0 && lines[0].split(',').length > 2) {
+                    users = parseExcel(raw);
+                } else {
+                    users = parseText(raw);
+                }
+            }
             if (users.length === 0) { document.getElementById('w-error').innerText = "No user data found."; return; }
             state.users = users;
             state.currentIndex = 0;
@@ -245,7 +255,8 @@
                 rawFirstName = parts[mapping.firstName]?.trim() || "";
                 rawLastName = parts[mapping.lastName]?.trim() || "";
             } else {
-                const rawName = parts[mapping.fullName > -1 ? mapping.fullName : 0]?.trim() || "";
+                const nameIdx = mapping.fullName > -1 ? mapping.fullName : (mapping.firstName > -1 ? mapping.firstName : 0);
+                const rawName = parts[nameIdx]?.trim() || "";
                 const nameParts = rawName.split(/\s+/).filter(Boolean);
                 if (nameParts.length > 1) {
                     rawLastName = nameParts.pop();
@@ -255,8 +266,10 @@
                 }
             }
 
-            const firstName = rawFirstName.split(/\s+/).filter(Boolean).join('.');
-            const lastName = rawLastName;
+            let firstName = rawFirstName.split(/\s+/).filter(Boolean).join('.');
+            let lastName = rawLastName;
+            if (firstName.includes('@')) firstName = "";
+            if (lastName.includes('@')) lastName = "";
 
             let rawPhone = "";
             if (mapping.phone > -1) {
@@ -285,20 +298,58 @@
     }
 
     function parseText(text) {
-        const blocks = text.split(/\n\s*\n/).filter(b => b.trim());
+        const blocks = text.split(/\n\s*\n|\n(?=-{3,}|\={3,})\n/).map(b => b.trim()).filter(b => b);
         return blocks.map(b => {
             let rawFirstName = "", rawLastName = "", email = "", rawPhone = "", role = "", branch = "";
-            b.split('\n').forEach(l => {
-                if (l.match(/first/i)) rawFirstName = l.split(':')[1]?.trim() || "";
-                else if (l.match(/last/i)) rawLastName = l.split(':')[1]?.trim() || "";
-                else if (l.match(/email/i)) email = l.split(':')[1]?.trim() || "";
-                else if (l.match(/phone|mobile|cell|tel/i)) rawPhone = l.split(':')[1]?.trim() || "";
-                else if (l.match(/role/i)) role = l.split(':')[1]?.trim() || "";
-                else if (l.match(/branch|location/i)) branch = l.split(':')[1]?.trim() || "";
+            let nameFound = false;
+
+            b.split(/\r?\n/).forEach(l => {
+                const kvMatch = l.match(/^\s*([^:\-=]+)[:\-=]\s*(.+)$/);
+                if (kvMatch) {
+                    const key = kvMatch[1].trim().toLowerCase();
+                    const val = kvMatch[2].trim();
+                    if (key.match(/first\s*name|primer\s*nombre/)) { rawFirstName = val; nameFound = true; }
+                    else if (key.match(/last\s*name|apellido/)) { rawLastName = val; nameFound = true; }
+                    else if (key.match(/full\s*name|^name$|^nombre$/)) {
+                        const parts = val.split(/\s+/).filter(Boolean);
+                        rawFirstName = parts[0] || val;
+                        rawLastName = parts.length > 1 ? parts.slice(1).join(' ') : "";
+                        nameFound = true;
+                    }
+                    else if (key.match(/email|mail|correo/)) email = val;
+                    else if (key.match(/phone|mobile|cell|tel[ée]fono/)) {
+                        if (val.replace(/\D/g, '').length >= 7) rawPhone = val;
+                    }
+                    else if (key.match(/role|position|job|title/)) role = val;
+                    else if (key.match(/branch|location|office|site/)) branch = val;
+                } else {
+                    const emailMatch = l.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+                    const phoneMatch = l.match(/(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\b\d{10}\b/);
+                    
+                    if (emailMatch && !email) {
+                        email = emailMatch[0];
+                    } else if (phoneMatch && !rawPhone) {
+                        rawPhone = phoneMatch[0];
+                    } else {
+                        const cleanLine = l.trim();
+                        if (cleanLine) {
+                            if (!nameFound && cleanLine.split(/\s+/).length <= 4) {
+                                const parts = cleanLine.split(/\s+/);
+                                rawFirstName = parts[0];
+                                rawLastName = parts.slice(1).join(' ');
+                                nameFound = true;
+                            } else if (!role && cleanLine.length > 2) {
+                                role = cleanLine;
+                            }
+                        }
+                    }
+                }
             });
 
-            const firstName = rawFirstName.split(/\s+/).filter(Boolean).join('.');
-            const lastName = rawLastName;
+            let firstName = rawFirstName.split(/\s+/).filter(Boolean).join('.');
+            let lastName = rawLastName;
+            if (firstName.includes('@')) firstName = "";
+            if (lastName.includes('@')) lastName = "";
 
             return {
                 firstName, lastName, email,

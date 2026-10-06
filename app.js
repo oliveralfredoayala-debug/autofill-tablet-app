@@ -348,7 +348,11 @@ function parseAndInit() {
 }
 
 function parseSmartData(raw) {
-    if (raw.includes('\t') || raw.includes(',')) return parseExcelTsvData(raw);
+    if (raw.includes('\t')) return parseExcelTsvData(raw);
+    const lines = raw.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length > 0 && lines[0].split(',').length > 2) {
+        return parseExcelTsvData(raw);
+    }
     return parseTextOrEmailData(raw);
 }
 
@@ -389,7 +393,7 @@ function parseExcelTsvData(raw) {
             rawFirstName = getVal(mapping.firstName);
             rawLastName = getVal(mapping.lastName);
         } else {
-            const nameIdx = mapping.fullName > -1 ? mapping.fullName : 0;
+            const nameIdx = mapping.fullName > -1 ? mapping.fullName : (mapping.firstName > -1 ? mapping.firstName : 0);
             const rawName = getVal(nameIdx);
             const nameParts = rawName.split(/\s+/).filter(p => p);
             if (nameParts.length > 1) {
@@ -400,8 +404,11 @@ function parseExcelTsvData(raw) {
             }
         }
 
-        const firstName = rawFirstName.split(/\s+/).filter(Boolean).join('.');
-        const lastName = rawLastName;
+        let firstName = rawFirstName.split(/\s+/).filter(Boolean).join('.');
+        let lastName = rawLastName;
+        if (firstName.includes('@')) firstName = "";
+        if (lastName.includes('@')) lastName = "";
+
         const email = getVal(mapping.email > -1 ? mapping.email : (isTab ? 1 : -1)) || cols.find(c => c.includes('@'))?.trim() || "";
 
         let rawPhone = "";
@@ -440,6 +447,7 @@ function parseTextOrEmailData(text) {
         let rawPhone = "";
         let role = "";
         let branch = "";
+        let nameFound = false;
 
         const lines = block.split(/\r?\n/);
         for (const line of lines) {
@@ -447,12 +455,13 @@ function parseTextOrEmailData(text) {
             if (kvMatch) {
                 const key = kvMatch[1].trim().toLowerCase();
                 const val = kvMatch[2].trim();
-                if (key.match(/first\s*name|primer\s*nombre/)) rawFirstName = val;
-                else if (key.match(/last\s*name|apellido/)) rawLastName = val;
+                if (key.match(/first\s*name|primer\s*nombre/)) { rawFirstName = val; nameFound = true; }
+                else if (key.match(/last\s*name|apellido/)) { rawLastName = val; nameFound = true; }
                 else if (key.match(/full\s*name|^name$|^nombre$/)) {
                     const parts = val.split(/\s+/).filter(p => p);
                     rawFirstName = parts[0] || val;
                     rawLastName = parts.length > 1 ? parts.slice(1).join(' ') : "";
+                    nameFound = true;
                 }
                 else if (key.match(/email|mail|correo/)) email = val;
                 else if (key.match(/phone|mobile|cell|tel[ée]fono/)) {
@@ -462,14 +471,32 @@ function parseTextOrEmailData(text) {
                 else if (key.match(/branch|location|office|site/)) branch = val;
             } else {
                 const emailMatch = line.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-                if (emailMatch && !email) email = emailMatch[0];
                 const phoneMatch = line.match(/(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\b\d{10}\b/);
-                if (phoneMatch && !rawPhone) rawPhone = phoneMatch[0];
+                
+                if (emailMatch && !email) {
+                    email = emailMatch[0];
+                } else if (phoneMatch && !rawPhone) {
+                    rawPhone = phoneMatch[0];
+                } else {
+                    const cleanLine = line.trim();
+                    if (cleanLine) {
+                        if (!nameFound && cleanLine.split(/\s+/).length <= 4) {
+                            const parts = cleanLine.split(/\s+/);
+                            rawFirstName = parts[0];
+                            rawLastName = parts.slice(1).join(' ');
+                            nameFound = true;
+                        } else if (!role && cleanLine.length > 2) {
+                            role = cleanLine;
+                        }
+                    }
+                }
             }
         }
 
-        const firstName = rawFirstName.split(/\s+/).filter(Boolean).join('.');
-        const lastName = rawLastName;
+        let firstName = rawFirstName.split(/\s+/).filter(Boolean).join('.');
+        let lastName = rawLastName;
+        if (firstName.includes('@')) firstName = "";
+        if (lastName.includes('@')) lastName = "";
 
         const u = {
             firstName, lastName,
