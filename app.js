@@ -698,7 +698,7 @@ function renderQueue() {
 
             <div style="display:flex; flex-direction:column; gap:8px;">
                 <button type="button" class="btn-primary" style="background:#16a34a; font-size:13px; padding:12px;" data-action="fill-1look" data-idx="${i}">
-                    📝 FILL 1LOOK FORM NOW
+                    📋 COPY DATA TO CLIPBOARD
                 </button>
                 <button type="button" class="btn-secondary" style="padding:10px; font-size:12px;" data-action="copy-row" data-idx="${i}">
                     📋 Copy Full Row (TSV)
