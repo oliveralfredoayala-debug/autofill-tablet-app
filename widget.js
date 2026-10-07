@@ -523,16 +523,18 @@
         }
     };
 
-    window.widgetFillUser = function(i) {
+    window.widgetFillUser = async function(i) {
         if (i >= state.users.length) return;
         state.currentIndex = i;
         const u = state.users[i];
 
-        function setInput(keywords, val, isEmail = false) {
-            if (!val) return;
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        async function setInput(keywords, val, isEmail = false) {
+            if (!val) return false;
             if (!Array.isArray(keywords)) keywords = [keywords];
             const allInputs = Array.from(document.querySelectorAll('input'));
-            if (allInputs.length === 0) return;
+            if (allInputs.length === 0) return false;
 
             let inputs = allInputs.filter(e => e.type !== 'hidden' && getComputedStyle(e).display !== 'none' && getComputedStyle(e).visibility !== 'hidden');
             if (inputs.length === 0) inputs = allInputs;
@@ -554,7 +556,8 @@
                     e.type === "tel" || 
                     (e.name || "").toLowerCase().includes("phone") || (e.name || "").toLowerCase().includes("mobile") ||
                     (e.placeholder || "").toLowerCase().includes("phone") || (e.placeholder || "").toLowerCase().includes("mobile") ||
-                    (e.id || "").toLowerCase().includes("phone")
+                    (e.id || "").toLowerCase().includes("phone") || (e.id || "").toLowerCase().includes("mobile") ||
+                    (e.getAttribute('aria-label') || "").toLowerCase().includes("phone") || (e.getAttribute('aria-label') || "").toLowerCase().includes("mobile")
                 );
             }
 
@@ -591,6 +594,11 @@
                         input = parent.querySelector('input:not([type="hidden"])');
                         if (input) break;
                     }
+
+                    if (label.nextElementSibling) {
+                        input = label.nextElementSibling.tagName === 'INPUT' ? label.nextElementSibling : label.nextElementSibling.querySelector('input:not([type="hidden"])');
+                        if (input) break;
+                    }
                 }
             }
 
@@ -611,17 +619,77 @@
 
                 const digitsOnly = val.replace(/\D/g, '');
                 if ((!input.value || input.value.trim() === "") && digitsOnly) {
+                    await sleep(50);
                     if (nativeSetter) nativeSetter.call(input, digitsOnly);
                     else input.value = digitsOnly;
                     ['input', 'change', 'blur'].forEach(evt => input.dispatchEvent(new Event(evt, { bubbles: true })));
                 }
+                
+                await sleep(100);
+                return true;
+            }
+            return false;
+        }
+
+        async function fillRole(targetRole) {
+            if (!targetRole) return;
+            const label = Array.from(document.querySelectorAll('label, span, div')).find(el => ["Role", "Role *"].includes(el.innerText.trim()));
+            if (label) {
+                let trigger = label.nextElementSibling || label.querySelector('[role="combobox"]') || label.parentElement.querySelector('kendo-dropdownlist') || label.parentElement.querySelector('.ng-select-container');
+                if (!trigger) trigger = Array.from(document.querySelectorAll('kendo-dropdownlist, .ng-select-container')).find(e => e.offsetParent);
+                
+                if (trigger) {
+                    trigger.click();
+                    await sleep(500);
+                    let opts = Array.from(document.querySelectorAll('li, div[role="option"], span.ng-option-label, .k-item'));
+                    if (opts.length === 0) {
+                        label.click();
+                        await sleep(300);
+                        opts = Array.from(document.querySelectorAll('li, div[role="option"], span.ng-option-label, .k-item'));
+                    }
+                    const match = opts.find(o => o.innerText.trim().toLowerCase() === targetRole.toLowerCase())
+                        || opts.find(o => o.innerText.toLowerCase().includes(targetRole.toLowerCase()));
+                    if (match) {
+                        match.scrollIntoView({ block: 'center' });
+                        ['mousedown', 'mouseup', 'click'].forEach(evt => match.dispatchEvent(new MouseEvent(evt, { bubbles: true, cancelable: true, view: window })));
+                        await sleep(100);
+                        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+                    }
+                }
             }
         }
 
-        setInput(["first name", "firstname", "first", "primer nombre", "given name"], u.firstName);
-        setInput(["last name", "lastname", "last", "apellido", "family name"], u.lastName);
-        setInput(["email", "mail", "correo"], u.email, true);
-        setInput(["phone", "mobile", "cell", "teléfono"], u.phone);
+        async function fillManager(val) {
+            if (!val) return;
+            let el = Array.from(document.querySelectorAll('input')).find(e => e.placeholder?.toLowerCase().includes("search managers"));
+            if (!el) {
+                const label = Array.from(document.querySelectorAll('label')).find(l => l.innerText.toLowerCase().trim() === "manager");
+                if (label) el = document.getElementById(label.htmlFor) || label.querySelector('input') || label.nextElementSibling?.querySelector('input');
+            }
+            if (el) {
+                el.click(); el.focus();
+                el.value = val;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                await sleep(1500);
+                const opts = Array.from(document.querySelectorAll('li, div[role="option"], span.ng-option-label, .k-item'));
+                const match = opts.find(o => o.innerText.trim().toLowerCase() === val.toLowerCase()) || opts.find(o => o.innerText.toLowerCase().includes(val.toLowerCase()));
+                if (match) {
+                    match.scrollIntoView({ block: 'center' });
+                    ['mousedown', 'mouseup', 'click'].forEach(evt => match.dispatchEvent(new MouseEvent(evt, { bubbles: true, cancelable: true, view: window })));
+                }
+            }
+        }
+
+        toast(`⏳ Injecting ${u.firstName} ${u.lastName}...`, 'info');
+
+        await setInput(["first name", "firstname", "first", "primer nombre", "given name"], u.firstName);
+        await setInput(["last name", "lastname", "last", "apellido", "family name"], u.lastName);
+        await setInput(["email", "mail", "correo"], u.email, true);
+        await setInput(["phone", "mobile", "cell", "teléfono"], u.phone);
+
+        const targetRole = u.role1Look || u.role;
+        if (targetRole) await fillRole(targetRole);
+        if (u.managerEmail && u.managerEmail !== "N/A") await fillManager(u.managerEmail);
 
         // Auto mark as completed
         state.users[i].completed = true;
