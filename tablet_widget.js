@@ -157,14 +157,13 @@
                     const emailMatch = line.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
                     const phoneMatch = line.match(/(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\b\d{10}\b/);
                     if (emailMatch && !email) email = emailMatch[0];
-                    else if (phoneMatch && !rawPhone) rawPhone = phoneMatch[0];
-                    else {
-                        const cleanLine = line.trim();
-                        if (cleanLine && !nameFound && cleanLine.split(/\s+/).length <= 4) {
-                            const parts = cleanLine.split(/\s+/);
-                            rawFirstName = parts[0]; rawLastName = parts.slice(1).join(' '); nameFound = true;
-                        } else if (cleanLine && !role && cleanLine.length > 2) { role = cleanLine; }
-                    }
+                    if (phoneMatch && !rawPhone) rawPhone = phoneMatch[0];
+                    
+                    const cleanLine = line.trim();
+                    if (cleanLine && !nameFound && cleanLine.split(/\s+/).length <= 4 && !emailMatch && !phoneMatch) {
+                        const parts = cleanLine.split(/\s+/);
+                        rawFirstName = parts[0]; rawLastName = parts.slice(1).join(' '); nameFound = true;
+                    } else if (cleanLine && !role && cleanLine.length > 2 && !emailMatch && !phoneMatch) { role = cleanLine; }
                 }
             }
             let firstName = rawFirstName.replace(/[:]/g, '').split(/\s+/).filter(Boolean).join('.');
@@ -180,22 +179,24 @@
 
     function parseExcelData(raw) {
         const lines = raw.split(/\r?\n/).filter(l => l.trim());
-        if (lines.length < 2) return [];
-        const headers = lines[0].split('\t').map(h => h.toLowerCase().trim());
+        if (lines.length === 0) return [];
+        const isTab = lines[0].includes('\t');
+        const delim = isTab ? '\t' : ',';
+        const headers = lines[0].split(delim).map(h => h.toLowerCase().trim());
         const mapping = { firstName: -1, lastName: -1, fullName: -1, email: -1, phone: -1, role: -1, branch: -1 };
         
         headers.forEach((col, idx) => {
-            if (mapping.email === -1 && UM_CONFIG.keywords.email.some(w => col.includes(w))) mapping.email = idx;
-            else if (mapping.phone === -1 && UM_CONFIG.keywords.phone.some(w => col.includes(w))) mapping.phone = idx;
-            else if (mapping.role === -1 && UM_CONFIG.keywords.role.some(w => col.includes(w))) mapping.role = idx;
-            else if (mapping.firstName === -1 && UM_CONFIG.keywords.firstName.some(w => col.includes(w))) mapping.firstName = idx;
-            else if (mapping.lastName === -1 && UM_CONFIG.keywords.lastName.some(w => col.includes(w))) mapping.lastName = idx;
-            else if (mapping.fullName === -1 && UM_CONFIG.keywords.fullName.some(w => col.includes(w))) mapping.fullName = idx;
-            else if (mapping.branch === -1 && UM_CONFIG.keywords.branch.some(w => col.includes(w))) mapping.branch = idx;
+            if (mapping.email === -1 && UM_CONFIG.keywords.email.some(w => col.includes(w) || col === w)) mapping.email = idx;
+            else if (mapping.phone === -1 && UM_CONFIG.keywords.phone.some(w => col.includes(w) || col === w)) mapping.phone = idx;
+            else if (mapping.role === -1 && UM_CONFIG.keywords.role.some(w => col.includes(w) || col === w)) mapping.role = idx;
+            else if (mapping.firstName === -1 && UM_CONFIG.keywords.firstName.some(w => col.includes(w) || col === w)) mapping.firstName = idx;
+            else if (mapping.lastName === -1 && UM_CONFIG.keywords.lastName.some(w => col.includes(w) || col === w)) mapping.lastName = idx;
+            else if (mapping.fullName === -1 && UM_CONFIG.keywords.fullName.some(w => col.includes(w) || col === w)) mapping.fullName = idx;
+            else if (mapping.branch === -1 && UM_CONFIG.keywords.branch.some(w => col.includes(w) || col === w)) mapping.branch = idx;
         });
 
         return lines.slice(1).map(line => {
-            const cols = line.split('\t');
+            const cols = line.split(delim);
             const getVal = (idx) => idx > -1 && cols[idx] ? cols[idx].trim() : "";
             
             let rawFirstName = getVal(mapping.firstName), rawLastName = getVal(mapping.lastName);
@@ -207,10 +208,19 @@
             let firstName = rawFirstName.replace(/[:]/g, '').split(/\s+/).filter(Boolean).join('.');
             let lastName = rawLastName.replace(/[:]/g, '').trim();
             
+            let rawPhone = getVal(mapping.phone);
+            if (!rawPhone) {
+                const foundCell = cols.find(c => {
+                    const d = c.trim().replace(/\D/g, '');
+                    return d.length >= 7 && d.length <= 15 && /(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\b\d{10}\b/.test(c);
+                });
+                if (foundCell) rawPhone = foundCell.trim();
+            }
+
             return {
                 firstName, lastName,
                 email: getVal(mapping.email) || cols.find(c => c.includes('@')) || "",
-                phone: cleanPhone(getVal(mapping.phone)),
+                phone: cleanPhone(rawPhone),
                 role: getVal(mapping.role),
                 branch: getVal(mapping.branch),
                 originalRole: getVal(mapping.role),
@@ -228,7 +238,8 @@
         const raw = document.getElementById('um-input-data').value;
         if (!raw.trim()) { document.getElementById('um-error').innerText = "Please paste data."; return; }
         
-        const isExcel = raw.includes('\t');
+        const lines = raw.split(/\r?\n/).filter(l => l.trim());
+        const isExcel = raw.includes('\t') || (lines.length > 0 && lines[0].split(',').length > 2);
         umState.users = isExcel ? parseExcelData(raw) : parseTextData(raw);
         
         if (umState.users.length === 0) { document.getElementById('um-error').innerText = "No valid data found."; return; }
