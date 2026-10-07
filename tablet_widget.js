@@ -39,6 +39,8 @@
             .um-textarea { width: 100%; height: 140px; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 10px; font-size: 13px; box-sizing: border-box; resize: vertical; margin-bottom: 8px; }
             .um-select { width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 12px; margin-top: 4px; }
             .um-card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:12px; }
+            .um-copy-box { background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; font-size:13px; cursor:pointer; user-select:none; transition:background 0.2s; }
+            .um-copy-box:active { background:#e2e8f0; }
             #um-toast { position: absolute; bottom: 10px; left: 10px; right: 10px; background: #1e293b; color: white; padding: 10px; border-radius: 8px; font-size: 12px; text-align: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 10; }
         </style>
         <div id="um-header">
@@ -325,24 +327,59 @@
         showScreen('um-step-3');
     };
 
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
     function renderQueue() {
         if (umState.currentIndex >= umState.users.length) return;
         const u = umState.users[umState.currentIndex];
         document.getElementById('um-queue-container').innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <span style="font-size:12px; font-weight:700; color:#64748b;">USER ${umState.currentIndex + 1} OF ${umState.users.length}</span>
                 ${u.completed ? '<span style="background:#10b981; color:white; padding:2px 6px; border-radius:10px; font-size:10px; font-weight:bold;">DONE</span>' : ''}
             </div>
-            <div class="um-card">
-                <div style="font-size:16px; font-weight:800; color:#1e293b; margin-bottom:4px;">${u.firstName} ${u.lastName}</div>
-                <div style="font-size:12px; color:#475569;">📧 ${u.email || 'N/A'}</div>
-                <div style="font-size:12px; color:#475569;">📞 ${u.phone || 'N/A'}</div>
-                <hr style="border:0; border-top:1px solid #e2e8f0; margin:8px 0;">
-                <div style="font-size:12px; color:#15803d; font-weight:600;">1LOOK: ${u.role1Look}</div>
-                <div style="font-size:12px; color:#c2410c; font-weight:600;">Estimator: ${u.roleEstimator}</div>
+            
+            <div style="font-size:11px; color:#64748b; font-weight:800; margin-bottom:8px;">👇 TAP ANY FIELD TO COPY:</div>
+            
+            <div class="um-copy-box" data-val="${escapeHtml(u.firstName)}" data-label="First Name">
+                <span style="color:#64748b; font-weight:700;">First Name:</span>
+                <span style="font-weight:800; color:#1e1b4b;">${u.firstName} 📋</span>
+            </div>
+            
+            <div class="um-copy-box" data-val="${escapeHtml(u.lastName)}" data-label="Last Name">
+                <span style="color:#64748b; font-weight:700;">Last Name:</span>
+                <span style="font-weight:800; color:#1e1b4b;">${u.lastName} 📋</span>
+            </div>
+            
+            <div class="um-copy-box" data-val="${escapeHtml(u.email)}" data-label="Email">
+                <span style="color:#64748b; font-weight:700;">Email:</span>
+                <span style="font-weight:800; color:#1e1b4b;">${u.email || '-'} 📋</span>
+            </div>
+            
+            <div class="um-copy-box" data-val="${escapeHtml(u.phone)}" data-label="Phone">
+                <span style="color:#64748b; font-weight:700;">Phone:</span>
+                <span style="font-weight:800; color:#1e1b4b;">${u.phone || '-'} 📋</span>
+            </div>
+            
+            <div class="um-copy-box" data-val="${escapeHtml(u.roleEstimator || u.role)}" data-label="Estimator Role" style="background:#fff7ed; border-color:#fed7aa;">
+                <span style="color:#c2410c; font-weight:700;">OCC Role:</span>
+                <span style="font-weight:800; color:#9a3412;">${escapeHtml(u.roleEstimator || u.role)} 📋</span>
             </div>
         `;
     }
+
+    document.getElementById('um-body').addEventListener('click', (e) => {
+        const chip = e.target.closest('.um-copy-box');
+        if (chip) {
+            const val = chip.getAttribute('data-val');
+            const label = chip.getAttribute('data-label') || 'Field';
+            if (val && val !== 'undefined') {
+                copyTextToClipboard(val, label + " Copied!");
+            }
+        }
+    });
 
     document.getElementById('um-btn-prev').onclick = () => { if(umState.currentIndex > 0) { umState.currentIndex--; renderQueue(); } };
     document.getElementById('um-btn-next').onclick = () => { if(umState.currentIndex < umState.users.length - 1) { umState.currentIndex++; renderQueue(); } };
