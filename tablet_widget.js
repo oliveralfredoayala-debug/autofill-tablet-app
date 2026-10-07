@@ -67,6 +67,10 @@
             <div id="um-step-3" style="display:none;">
                 <div id="um-queue-container"></div>
                 <button id="um-btn-fill" class="um-btn" style="background:#16a34a; font-size:14px; padding:14px; margin-top:12px;">⚡ AUTO-FILL 1LOOK FORM</button>
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                    <button id="um-btn-copy-1look" class="um-btn" style="background:#0ea5e9; font-size:12px; padding:10px;">📋 Copy 1LOOK</button>
+                    <button id="um-btn-copy-occ" class="um-btn" style="background:#f97316; font-size:12px; padding:10px;">📋 Copy Estimator</button>
+                </div>
                 <div style="display:flex; gap:8px; margin-top:12px;">
                     <button id="um-btn-prev" class="um-btn" style="background:#cbd5e1; color:#0f172a;">◀ Prev</button>
                     <button id="um-btn-next" class="um-btn" style="background:#cbd5e1; color:#0f172a;">Next ▶</button>
@@ -130,50 +134,57 @@
     function cleanPhone(p) { return p ? p.replace(/[^0-9+() -]/g, '').trim() : ""; }
     
     function parseTextData(text) {
-        let blocks = text.split(/\n\s*\n|\n(?=-{3,}|\={3,})\n/).map(b => b.trim()).filter(b => b);
+        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
         const users = [];
-        for (const block of blocks) {
-            let rawFirstName = "", rawLastName = "", email = "", rawPhone = "", role = "", branch = "", nameFound = false;
-            const lines = block.split(/\r?\n/);
-            for (const line of lines) {
-                const kvMatch = line.match(/^([^:]+):\s*(.*)$/);
-                if (kvMatch) {
-                    const key = kvMatch[1].trim().toLowerCase(), val = kvMatch[2].trim();
-                    if (key.match(/first\s*name|primer\s*nombre/)) { rawFirstName = val; nameFound = true; }
-                    else if (key.match(/last\s*name|apellido/)) { rawLastName = val; nameFound = true; }
-                    else if (key.match(/full\s*name|^name$|^nombre$/)) {
-                        const parts = val.split(/\s+/).filter(p => p);
-                        rawFirstName = parts[0] || val;
-                        rawLastName = parts.length > 1 ? parts.slice(1).join(' ') : "";
-                        nameFound = true;
-                    }
-                    else if (key.match(/email|mail|correo/)) email = val;
-                    else if (key.match(/phone|mobile|cell|tel[ée]fono/)) {
-                        if (!rawPhone || val.replace(/\D/g, '').length >= 7) rawPhone = val;
-                    }
-                    else if (key.match(/role|title|cargo/)) role = val;
-                    else if (key.match(/branch|location|office|site/)) branch = val;
-                } else {
-                    const emailMatch = line.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-                    const phoneMatch = line.match(/(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\b\d{10}\b/);
-                    if (emailMatch && !email) email = emailMatch[0];
-                    if (phoneMatch && !rawPhone) rawPhone = phoneMatch[0];
-                    
-                    const cleanLine = line.trim();
-                    if (cleanLine && !nameFound && cleanLine.split(/\s+/).length <= 4 && !emailMatch && !phoneMatch) {
-                        const parts = cleanLine.split(/\s+/);
-                        rawFirstName = parts[0]; rawLastName = parts.slice(1).join(' '); nameFound = true;
-                    } else if (cleanLine && !role && cleanLine.length > 2 && !emailMatch && !phoneMatch) { role = cleanLine; }
+        let cur = {};
+
+        const pushUser = () => {
+            if (cur.first || cur.last || cur.email || cur.phone) {
+                let f = (cur.first||"").replace(/[:]/g, '').split(/\s+/).filter(Boolean).join('.');
+                let l = (cur.last||"").replace(/[:]/g, '').trim();
+                if (f.includes('@')) f = ""; if (l.includes('@')) l = "";
+                users.push({ firstName: f, lastName: l, email: cur.email||"", phone: cleanPhone(cur.phone||""), role: cur.role||"", branch: cur.branch||"", originalRole: cur.role||"", completed: false });
+            }
+            cur = {};
+        };
+
+        for (const line of lines) {
+            let tF = "", tL = "", tE = "", tP = "", tR = "", tB = "";
+            const kvMatch = line.match(/^([^:]+):\s*(.*)$/);
+            
+            if (kvMatch) {
+                const k = kvMatch[1].trim().toLowerCase(), v = kvMatch[2].trim();
+                if (k.match(/first\s*name|primer\s*nombre/)) tF = v;
+                else if (k.match(/last\s*name|apellido/)) tL = v;
+                else if (k.match(/full\s*name|^name$|^nombre$/)) { const p = v.split(/\s+/); tF = p[0]; tL = p.slice(1).join(' '); }
+                else if (k.match(/email|mail|correo/)) tE = v;
+                else if (k.match(/phone|mobile|cell|tel[ée]fono/)) tP = v;
+                else if (k.match(/role|title|cargo/)) tR = v;
+                else if (k.match(/branch|location/)) tB = v;
+            } else {
+                const eM = line.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+                const pM = line.match(/(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\b\d{10}\b/);
+                if (eM) tE = eM[0];
+                if (pM) tP = pM[0];
+                const cl = line.trim();
+                if (!eM && !pM && cl && cl.split(/\s+/).length <= 4) {
+                    const p = cl.split(/\s+/); tF = p[0]; tL = p.slice(1).join(' ');
                 }
             }
-            let firstName = rawFirstName.replace(/[:]/g, '').split(/\s+/).filter(Boolean).join('.');
-            let lastName = rawLastName.replace(/[:]/g, '').trim();
-            if (firstName.includes('@')) firstName = "";
-            if (lastName.includes('@')) lastName = "";
-            if (firstName || lastName || email || rawPhone) {
-                users.push({ firstName, lastName, email, phone: cleanPhone(rawPhone), role, branch, originalRole: role, completed: false });
+
+            // Conflict? If we already have a property and found it again on a NEW line, start a new user block!
+            if ((tE && cur.email) || (tP && cur.phone) || ((tF||tL) && (cur.first||cur.last))) {
+                pushUser();
             }
+
+            if (tF) cur.first = tF;
+            if (tL) cur.last = tL;
+            if (tE) cur.email = tE;
+            if (tP) cur.phone = tP;
+            if (tR) cur.role = tR;
+            if (tB) cur.branch = tB;
         }
+        pushUser();
         return users;
     }
 
@@ -184,42 +195,63 @@
         const delim = isTab ? '\t' : ',';
         const headers = lines[0].split(delim).map(h => h.toLowerCase().trim());
         const mapping = { firstName: -1, lastName: -1, fullName: -1, email: -1, phone: -1, role: -1, branch: -1 };
+        let hasHeaders = false;
         
         headers.forEach((col, idx) => {
-            if (mapping.email === -1 && UM_CONFIG.keywords.email.some(w => col.includes(w) || col === w)) mapping.email = idx;
-            else if (mapping.phone === -1 && UM_CONFIG.keywords.phone.some(w => col.includes(w) || col === w)) mapping.phone = idx;
-            else if (mapping.role === -1 && UM_CONFIG.keywords.role.some(w => col.includes(w) || col === w)) mapping.role = idx;
-            else if (mapping.firstName === -1 && UM_CONFIG.keywords.firstName.some(w => col.includes(w) || col === w)) mapping.firstName = idx;
-            else if (mapping.lastName === -1 && UM_CONFIG.keywords.lastName.some(w => col.includes(w) || col === w)) mapping.lastName = idx;
-            else if (mapping.fullName === -1 && UM_CONFIG.keywords.fullName.some(w => col.includes(w) || col === w)) mapping.fullName = idx;
-            else if (mapping.branch === -1 && UM_CONFIG.keywords.branch.some(w => col.includes(w) || col === w)) mapping.branch = idx;
+            if (mapping.email === -1 && UM_CONFIG.keywords.email.includes(col)) { mapping.email = idx; hasHeaders = true; }
+            else if (mapping.phone === -1 && UM_CONFIG.keywords.phone.includes(col)) { mapping.phone = idx; hasHeaders = true; }
+            else if (mapping.role === -1 && UM_CONFIG.keywords.role.includes(col)) { mapping.role = idx; hasHeaders = true; }
+            else if (mapping.firstName === -1 && UM_CONFIG.keywords.firstName.includes(col)) { mapping.firstName = idx; hasHeaders = true; }
+            else if (mapping.lastName === -1 && UM_CONFIG.keywords.lastName.includes(col)) { mapping.lastName = idx; hasHeaders = true; }
+            else if (mapping.fullName === -1 && UM_CONFIG.keywords.fullName.includes(col)) { mapping.fullName = idx; hasHeaders = true; }
+            else if (mapping.branch === -1 && UM_CONFIG.keywords.branch.includes(col)) { mapping.branch = idx; hasHeaders = true; }
         });
 
-        return lines.slice(1).map(line => {
+        const dataLines = hasHeaders ? lines.slice(1) : lines;
+
+        return dataLines.map(line => {
             const cols = line.split(delim);
             const getVal = (idx) => idx > -1 && cols[idx] ? cols[idx].trim() : "";
             
-            let rawFirstName = getVal(mapping.firstName), rawLastName = getVal(mapping.lastName);
-            if (!rawFirstName && !rawLastName && mapping.fullName > -1) {
-                const parts = getVal(mapping.fullName).split(/\s+/);
-                rawFirstName = parts[0] || ""; rawLastName = parts.slice(1).join(' ');
-            }
+            let rawFirstName = "", rawLastName = "", rawEmail = "", rawPhone = "";
             
-            let firstName = rawFirstName.replace(/[:]/g, '').split(/\s+/).filter(Boolean).join('.');
-            let lastName = rawLastName.replace(/[:]/g, '').trim();
-            
-            let rawPhone = getVal(mapping.phone);
-            if (!rawPhone) {
-                const foundCell = cols.find(c => {
+            if (!hasHeaders) {
+                // Heuristics for headerless pasted tables
+                rawEmail = cols.find(c => c.includes('@')) || "";
+                rawPhone = cols.find(c => {
                     const d = c.trim().replace(/\D/g, '');
                     return d.length >= 7 && d.length <= 15 && /(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\b\d{10}\b/.test(c);
-                });
-                if (foundCell) rawPhone = foundCell.trim();
+                }) || "";
+                if (cols[0] && cols[0] !== rawEmail && cols[0] !== rawPhone) {
+                    const parts = cols[0].split(/\s+/);
+                    rawFirstName = parts[0] || "";
+                    rawLastName = parts.slice(1).join(' ');
+                }
+            } else {
+                rawFirstName = getVal(mapping.firstName); rawLastName = getVal(mapping.lastName);
+                if (!rawFirstName && !rawLastName && mapping.fullName > -1) {
+                    const parts = getVal(mapping.fullName).split(/\s+/);
+                    rawFirstName = parts[0] || ""; rawLastName = parts.slice(1).join(' ');
+                }
+                rawEmail = getVal(mapping.email) || cols.find(c => c.includes('@')) || "";
+                rawPhone = getVal(mapping.phone);
+                if (!rawPhone) {
+                    const foundCell = cols.find(c => {
+                        const d = c.trim().replace(/\D/g, '');
+                        return d.length >= 7 && d.length <= 15 && /(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\b\d{10}\b/.test(c);
+                    });
+                    if (foundCell) rawPhone = foundCell.trim();
+                }
             }
 
+            let firstName = rawFirstName.replace(/[:]/g, '').split(/\s+/).filter(Boolean).join('.');
+            let lastName = rawLastName.replace(/[:]/g, '').trim();
+            if (firstName.includes('@')) firstName = "";
+            if (lastName.includes('@')) lastName = "";
+            
             return {
                 firstName, lastName,
-                email: getVal(mapping.email) || cols.find(c => c.includes('@')) || "",
+                email: rawEmail,
                 phone: cleanPhone(rawPhone),
                 role: getVal(mapping.role),
                 branch: getVal(mapping.branch),
@@ -316,6 +348,30 @@
     document.getElementById('um-btn-next').onclick = () => { if(umState.currentIndex < umState.users.length - 1) { umState.currentIndex++; renderQueue(); } };
     document.getElementById('um-btn-reset-1').onclick = document.getElementById('um-btn-reset-2').onclick = () => {
         umState.users = []; umState.currentIndex = 0; showScreen('um-step-1');
+    };
+
+    function copyTextToClipboard(text, msg) {
+        const el = document.createElement('textarea');
+        el.value = text;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        showToast("✅ " + msg, "success");
+    }
+
+    document.getElementById('um-btn-copy-1look').onclick = () => {
+        const u = umState.users[umState.currentIndex];
+        const roleDisplay = u.branch ? `${u.role1Look || u.role || 'Sales Representative'} (${u.branch})` : (u.role1Look || u.role || 'Sales Representative');
+        const row = [u.firstName, u.lastName, u.email, u.phone, roleDisplay].join('\t');
+        copyTextToClipboard(row, "1LOOK Row Copied!");
+    };
+
+    document.getElementById('um-btn-copy-occ').onclick = () => {
+        const u = umState.users[umState.currentIndex];
+        const roleDisplay = u.roleEstimator || u.role || 'Salesrep';
+        const row = [u.firstName, u.lastName, u.email, u.phone, roleDisplay, u.branch || ''].join('\t');
+        copyTextToClipboard(row, "Estimator Row Copied!");
     };
 
     // 8. Auto-fill Execution (Direct DOM Manipulation)
