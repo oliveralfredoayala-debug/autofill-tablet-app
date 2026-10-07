@@ -9,7 +9,8 @@ const CONFIG = {
         role: ["role", "job", "title", "position", "permissions", "cargo", "puesto"],
         branch: ["branch", "location", "locations", "office", "site", "sucursal", "oficina"]
     },
-    roles1Look: ["Sales Representative", "Installer", "Sales Manager", "Finance Manager", "Admin", "User"]
+    roles1Look: ["Sales Representative", "Installer", "Sales Manager", "Finance Manager", "Admin", "User"],
+    rolesEstimator: ["Salesrep", "Admin", "Org Admin", "User", "sales_manager", "Custom"]
 };
 
 // --- STATE ---
@@ -203,7 +204,15 @@ window.copyUserRow = function(idx) {
     const u = state.users[idx];
     const roleDisplay = u.branch ? `${u.role1Look || u.role || 'Sales Representative'} (${u.branch})` : (u.role1Look || u.role || 'Sales Representative');
     const row = [u.firstName, u.lastName, u.email, u.phone, roleDisplay].join('\t');
-    window.copyText(row, `Row for ${u.firstName}`);
+    window.copyText(row, `1LOOK Row for ${u.firstName}`);
+};
+
+window.copyEstimatorRow = function(idx) {
+    if (idx >= state.users.length) return;
+    const u = state.users[idx];
+    const roleDisplay = u.roleEstimator || u.role || 'Salesrep';
+    const row = [u.firstName, u.lastName, u.email, u.phone, roleDisplay, u.branch || ''].join('\t');
+    window.copyText(row, `Estimator Row for ${u.firstName}`);
 };
 
 document.addEventListener('click', (e) => {
@@ -265,6 +274,8 @@ document.addEventListener('click', (e) => {
             toggleUserComplete(idx);
         } else if (action === 'copy-row') {
             copyUserRow(idx);
+        } else if (action === 'copy-estimator') {
+            copyEstimatorRow(idx);
         }
     }
 });
@@ -566,20 +577,27 @@ function renderConfigUI() {
 
         const rLower = (role || "").toLowerCase();
         let def1Look = 'Sales Representative';
+        let defEstimator = 'Salesrep';
 
-        if (rLower.includes('install')) { def1Look = 'Installer'; }
-        else if (rLower.includes('finance') || rLower === 'fm') { def1Look = 'Finance Manager'; }
-        else if ((rLower.includes('sales') && rLower.includes('manager')) || rLower === 'sm') { def1Look = 'Sales Manager'; }
-        else if (rLower.includes('sales') || rLower.includes('rep') || rLower === 'sr') { def1Look = 'Sales Representative'; }
-        else if (rLower.includes('admin')) { def1Look = 'Admin'; }
-        else if (rLower.includes('user')) { def1Look = 'User'; }
+        if (rLower.includes('install')) { def1Look = 'Installer'; defEstimator = 'User'; }
+        else if (rLower.includes('finance') || rLower === 'fm') { def1Look = 'Finance Manager'; defEstimator = 'Org Admin'; }
+        else if ((rLower.includes('sales') && rLower.includes('manager')) || rLower === 'sm') { def1Look = 'Sales Manager'; defEstimator = 'sales_manager'; }
+        else if (rLower.includes('sales') || rLower.includes('rep') || rLower === 'sr') { def1Look = 'Sales Representative'; defEstimator = 'Salesrep'; }
+        else if (rLower.includes('admin')) { def1Look = 'Admin'; defEstimator = 'Admin'; }
+        else if (rLower.includes('user')) { def1Look = 'User'; defEstimator = 'User'; }
 
         div.innerHTML = `
             <div style="margin-bottom:4px; font-weight:700; font-size:11px; color:#0f4c47;">Parsed Role: "${role || '(Default / Empty)'}"</div>
             <div>
-                <label style="color:#e87a47; font-size:10px; font-weight:700;">🟢 1LOOK ROLE</label>
+                <label style="color:#e87a47; font-size:10px; font-weight:700;">⚡ 1LOOK ROLE</label>
                 <select class="map-select-1look" data-original="${role}">
                     ${CONFIG.roles1Look.map(r => `<option value="${r}" ${r === def1Look ? 'selected' : ''}>${r}</option>`).join('')}
+                </select>
+            </div>
+            <div style="margin-top:6px;">
+                <label style="color:#ea580c; font-size:10px; font-weight:700;">🟧 ESTIMATOR ROLE</label>
+                <select class="map-select-estimator" data-original="${role}">
+                    ${CONFIG.rolesEstimator.map(r => `<option value="${r}" ${r === defEstimator ? 'selected' : ''}>${r}</option>`).join('')}
                 </select>
             </div>
         `;
@@ -590,15 +608,21 @@ function renderConfigUI() {
 function applyConfigAndStart() {
     try {
         const map1Look = {};
+        const mapEstimator = {};
         document.querySelectorAll('.map-select-1look').forEach(s => {
             const orig = s.getAttribute('data-original') || "";
             map1Look[orig] = s.value;
+        });
+        document.querySelectorAll('.map-select-estimator').forEach(s => {
+            const orig = s.getAttribute('data-original') || "";
+            mapEstimator[orig] = s.value;
         });
 
         if (state.users && state.users.length > 0) {
             state.users.forEach(u => {
                 const origKey = u.originalRole || u.role || "";
                 u.role1Look = map1Look[origKey] || map1Look[""] || map1Look["undefined"] || 'Sales Representative';
+                u.roleEstimator = mapEstimator[origKey] || mapEstimator[""] || mapEstimator["undefined"] || 'Salesrep';
             });
         }
 
@@ -690,9 +714,14 @@ function renderQueue() {
                     <span style="font-weight:800; color:#1e1b4b; font-size:13px;">${u.phone || '-'} 📋</span>
                 </div>
 
-                <div class="copy-field-box" data-copy-val="${escapeHtml(roleDisplay)}" data-copy-label="Role" style="background:#f0fdf4; border-color:#bbf7d0;">
-                    <span style="color:#15803d; font-weight:700;">Role:</span>
+                <div class="copy-field-box" data-copy-val="${escapeHtml(roleDisplay)}" data-copy-label="1LOOK Role" style="background:#f0fdf4; border-color:#bbf7d0;">
+                    <span style="color:#15803d; font-weight:700;">1LOOK Role:</span>
                     <span style="font-weight:800; color:#166534; font-size:13px;">${roleDisplay} 📋</span>
+                </div>
+
+                <div class="copy-field-box" data-copy-val="${escapeHtml(u.roleEstimator || u.role)}" data-copy-label="Estimator Role" style="background:#fff7ed; border-color:#fed7aa;">
+                    <span style="color:#c2410c; font-weight:700;">Estimator Role:</span>
+                    <span style="font-weight:800; color:#9a3412; font-size:13px;">${escapeHtml(u.roleEstimator || u.role)} 📋</span>
                 </div>
             </div>
 
@@ -700,9 +729,14 @@ function renderQueue() {
                 <button type="button" class="btn-primary" style="background:#16a34a; font-size:13px; padding:12px;" data-action="fill-1look" data-idx="${i}">
                     📋 COPY DATA TO CLIPBOARD
                 </button>
-                <button type="button" class="btn-secondary" style="padding:10px; font-size:12px;" data-action="copy-row" data-idx="${i}">
-                    📋 Copy Full Row (TSV)
-                </button>
+                <div style="display:flex; gap:8px;">
+                    <button type="button" class="btn-secondary" style="flex:1; padding:10px; font-size:11px;" data-action="copy-row" data-idx="${i}">
+                        📋 Copy 1LOOK (TSV)
+                    </button>
+                    <button type="button" class="btn-secondary" style="flex:1; padding:10px; font-size:11px;" data-action="copy-estimator" data-idx="${i}">
+                        📋 Copy Estimator (TSV)
+                    </button>
+                </div>
             </div>
         </div>
     `;
