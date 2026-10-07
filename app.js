@@ -414,8 +414,8 @@ function parseExcelTsvData(raw) {
             }
         }
 
-        let firstName = rawFirstName.split(/\s+/).filter(Boolean).join('.');
-        let lastName = rawLastName;
+        let firstName = rawFirstName.replace(/[:]/g, '').split(/\s+/).filter(Boolean).join('.');
+        let lastName = rawLastName.replace(/[:]/g, '').trim();
         if (firstName.includes('@')) firstName = "";
         if (lastName.includes('@')) lastName = "";
 
@@ -503,8 +503,8 @@ function parseTextOrEmailData(text) {
             }
         }
 
-        let firstName = rawFirstName.split(/\s+/).filter(Boolean).join('.');
-        let lastName = rawLastName;
+        let firstName = rawFirstName.replace(/[:]/g, '').split(/\s+/).filter(Boolean).join('.');
+        let lastName = rawLastName.replace(/[:]/g, '').trim();
         if (firstName.includes('@')) firstName = "";
         if (lastName.includes('@')) lastName = "";
 
