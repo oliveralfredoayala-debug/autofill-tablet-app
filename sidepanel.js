@@ -23,17 +23,16 @@ let state = {
 
 let screens = {};
 
-function initApp() {
+async function initApp() {
     screens = {
         wizard: document.getElementById('ui-wizard'),
         config: document.getElementById('ui-config'),
         queue: document.getElementById('ui-queue')
     };
 
-    loadState();
+    await loadState();
     render();
     setupListeners();
-    setupBookmarklet();
 }
 
 if (document.readyState === 'loading') {
@@ -286,16 +285,24 @@ function escapeHtml(str) {
 }
 
 function saveState() {
-    localStorage.setItem('tablet_app_state', JSON.stringify(state));
-    if (state.users && state.users[state.currentIndex]) {
-        localStorage.setItem('tablet_current_user', JSON.stringify(state.users[state.currentIndex]));
-    }
+    chrome.storage.local.set({ appState: state });
 }
 
-function loadState() {
-    const saved = localStorage.getItem('tablet_app_state');
-    if (saved) {
-        try { state = JSON.parse(saved); } catch (e) { }
+async function loadState() {
+    const data = await chrome.storage.local.get('appState');
+    if (data.appState) {
+        state = data.appState;
+        if (state.status === 'active' && state.users.length > 0) {
+            renderQueue();
+            document.getElementById('ui-wizard').classList.add('hidden');
+            document.getElementById('ui-config').classList.add('hidden');
+            document.getElementById('ui-queue').classList.remove('hidden');
+        } else if (state.status === 'config' && state.users.length > 0) {
+            renderConfigUI();
+            document.getElementById('ui-wizard').classList.add('hidden');
+            document.getElementById('ui-queue').classList.add('hidden');
+            document.getElementById('ui-config').classList.remove('hidden');
+        }
     }
 }
 
@@ -727,7 +734,7 @@ function renderQueue() {
 
             <div style="display:flex; flex-direction:column; gap:8px;">
                 <button type="button" class="btn-primary" style="background:#16a34a; font-size:13px; padding:12px;" data-action="fill-1look" data-idx="${i}">
-                    📋 COPY DATA TO CLIPBOARD
+                    📝 FILL 1LOOK FORM NOW
                 </button>
                 <div style="display:flex; gap:8px;">
                     <button type="button" class="btn-secondary" style="flex:1; padding:10px; font-size:11px;" data-action="copy-row" data-idx="${i}">
@@ -750,15 +757,41 @@ window.toggleUserComplete = function(idx) {
     }
 };
 
-window.triggerFillUser = function(idx) {
+window.triggerFillUser = async function(idx) {
     if (idx >= state.users.length) return;
     state.currentIndex = idx;
     saveState();
     renderQueue();
-
     const u = state.users[idx];
-    copyUserRow(idx);
-    showToast(`📋 Copied row for ${u.firstName}! Switch to 1LOOK form & paste.`, "success");
+    showToast('⏳ Injecting ' + u.firstName + ' ' + u.lastName + '...', 'info');
+
+    try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab) { showToast('⚠️ No active web tab found!', 'error'); return; }
+
+        const tId = tab.id;
+        const sendMessageToTab = (tId) => {
+            chrome.tabs.sendMessage(tId, { action: 'FILL_1LOOK', user: u, sendWelcome: state.sendWelcome }, async (resp) => {
+                if (chrome.runtime.lastError) {
+                    try {
+                        await chrome.scripting.executeScript({ target: { tabId: tId, allFrames: true }, files: ['content.js'] });
+                        setTimeout(() => {
+                            chrome.tabs.sendMessage(tId, { action: 'FILL_1LOOK', user: u, sendWelcome: state.sendWelcome }, (retryResp) => {
+                                if (chrome.runtime.lastError || (retryResp && retryResp.status === 'error')) showToast('⚠️ Could not auto-fill tab. Please refresh tab and retry.', 'error');
+                                else { showToast('✅ Filled 1LOOK for ' + u.firstName + '!', 'success'); state.users[idx].completed = true; saveState(); renderQueue(); }
+                            });
+                        }, 500);
+                    } catch (e) { showToast('❌ Cannot access tab. Refresh page or switch to 1LOOK tab.', 'error'); }
+                } else if (resp && resp.status === 'done') {
+                    showToast('✅ Filled 1LOOK for ' + u.firstName + '!', 'success');
+                    state.users[idx].completed = true; saveState(); renderQueue();
+                } else { showToast('⚠️ Fill error: ' + (resp?.message || 'Unknown error'), 'error'); }
+            });
+        };
+        sendMessageToTab(tId);
+    } catch (e) {
+        showToast('⚠️ Extension error. Make sure you are on a web page.', 'error');
+    }
 };
 
 function nextUser() {
